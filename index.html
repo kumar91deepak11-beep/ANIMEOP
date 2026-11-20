@@ -281,3 +281,270 @@ loadVideos();
 </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANIMEOP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090910;color:white;font-family:Arial,sans-serif}
+header{background:#15151f;padding:18px;position:sticky;top:0;z-index:5;border-bottom:1px solid #333}
+.logo{font-size:30px;font-weight:bold;color:#b56aff}
+main{padding:16px;max-width:1200px;margin:auto}
+input{width:100%;padding:14px;background:#20202a;color:white;border:1px solid #444;border-radius:10px;font-size:16px;margin:15px 0}
+h2{font-size:21px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{background:#191923;border-radius:12px;overflow:hidden;cursor:pointer}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.info{padding:10px}
+.info h3{font-size:14px;margin:4px 0 8px}
+.info p{font-size:12px;color:#aaa;margin:5px 0}
+button{background:#963be8;color:white;border:0;border-radius:8px;padding:12px;cursor:pointer}
+.more{width:100%;margin:18px 0}
+#status{color:#aaa}
+#details{display:none;position:fixed;inset:0;background:#090910;z-index:10;overflow:auto;padding:18px}
+#details img{width:145px;border-radius:10px;float:left;margin:0 15px 10px 0}
+#details p{color:#ccc;line-height:1.5}
+.close{float:right}
+#description{clear:both}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+
+<header><div class="logo">ANIMEOP</div></header>
+
+<main>
+<input id="search" placeholder="Search old and new anime..."
+onkeydown="if(event.key==='Enter')searchAnime()">
+
+<h2>🔥 Trending Anime</h2>
+<div class="grid" id="trending"></div>
+
+<h2>🆕 Latest Anime</h2>
+<div class="grid" id="latest"></div>
+
+<h2>🏆 Popular Anime</h2>
+<div class="grid" id="popular"></div>
+
+<h2>📚 Classic Anime</h2>
+<div class="grid" id="classic"></div>
+
+<h2>🔎 Search Results</h2>
+<p id="status">Search for any anime.</p>
+<div class="grid" id="results"></div>
+<button class="more" id="more" style="display:none" onclick="loadMore()">LOAD MORE</button>
+</main>
+
+<div id="details">
+<button class="close" onclick="closeDetails()">CLOSE ✕</button>
+<div id="detailContent"></div>
+</div>
+
+<script>
+const API="https://graphql.anilist.co";
+let searchPage=1;
+let searchTerm="";
+
+async function request(query,variables={}){
+ const response=await fetch(API,{
+  method:"POST",
+  headers:{"Content-Type":"application/json","Accept":"application/json"},
+  body:JSON.stringify({query,variables})
+ });
+ if(!response.ok)throw new Error("Anime database unavailable");
+ const data=await response.json();
+ if(data.errors)throw new Error(data.errors[0].message);
+ return data.data;
+}
+
+const fields=`
+id
+title { romaji english native }
+coverImage { large }
+description(asHtml:false)
+episodes
+season
+seasonYear
+startDate { year }
+format
+status
+genres
+averageScore
+`;
+
+function makeCard(anime){
+ const card=document.createElement("article");
+ card.className="card";
+ const img=document.createElement("img");
+ img.src=anime.coverImage?.large||"";
+ img.alt=anime.title.english||anime.title.romaji;
+ img.loading="lazy";
+
+ const info=document.createElement("div");
+ info.className="info";
+
+ const title=document.createElement("h3");
+ title.textContent=anime.title.english||anime.title.romaji;
+
+ const year=document.createElement("p");
+ year.textContent=(anime.seasonYear||anime.startDate?.year||"Year unknown")
+  +" • "+(anime.format||"Anime");
+
+ const episodes=document.createElement("p");
+ episodes.textContent="Episodes: "+(anime.episodes||"Unknown");
+
+ info.append(title,year,episodes);
+ card.append(img,info);
+ card.onclick=()=>showDetails(anime);
+ return card;
+}
+
+function display(list,id){
+ const box=document.getElementById(id);
+ box.innerHTML="";
+ list.forEach(anime=>box.appendChild(makeCard(anime)));
+}
+
+async function loadSection(id,sort,page=1){
+ const query=`
+ query($page:Int,$sort:[MediaSort]){
+  Page(page:$page,perPage:12){
+   media(type:ANIME,sort:$sort,isAdult:false){
+    ${fields}
+   }
+  }
+ }`;
+
+ const data=await request(query,{page,sort});
+ display(data.Page.media,id);
+}
+
+async function loadAll(){
+ try{
+  document.getElementById("trending").innerHTML="Loading...";
+  document.getElementById("latest").innerHTML="Loading...";
+  document.getElementById("popular").innerHTML="Loading...";
+  document.getElementById("classic").innerHTML="Loading...";
+
+  await Promise.all([
+   loadSection("trending",["TRENDING_DESC"]),
+   loadSection("latest",["START_DATE_DESC"]),
+   loadSection("popular",["POPULARITY_DESC"]),
+   loadSection("classic",["START_DATE"])
+  ]);
+ }catch(error){
+  document.getElementById("status").textContent=
+   "Could not load anime. Check your internet and refresh.";
+ }
+}
+
+async function searchAnime(){
+ searchTerm=document.getElementById("search").value.trim();
+ if(!searchTerm)return;
+
+ searchPage=1;
+ document.getElementById("status").textContent="Searching...";
+ document.getElementById("results").innerHTML="";
+ await getSearchResults();
+}
+
+async function getSearchResults(){
+ const query=`
+ query($page:Int,$search:String){
+  Page(page:$page,perPage:20){
+   media(type:ANIME,search:$search,isAdult:false,sort:SEARCH_MATCH){
+    ${fields}
+   }
+  }
+ }`;
+
+ try{
+  const data=await request(query,{
+   page:searchPage,
+   search:searchTerm
+  });
+  const list=data.Page.media;
+  const box=document.getElementById("results");
+
+  if(searchPage===1)box.innerHTML="";
+  list.forEach(anime=>box.appendChild(makeCard(anime)));
+
+  document.getElementById("status").textContent=
+   list.length+" anime results found";
+
+  document.getElementById("more").style.display=
+   list.length===20?"block":"none";
+ }catch(error){
+  document.getElementById("status").textContent=
+   "Search failed. Please try again.";
+ }
+}
+
+function loadMore(){
+ searchPage++;
+ getSearchResults();
+}
+
+function showDetails(anime){
+ const title=anime.title.english||anime.title.romaji;
+ document.getElementById("detailContent").innerHTML="";
+
+ const img=document.createElement("img");
+ img.src=anime.coverImage?.large||"";
+ img.alt=title;
+
+ const heading=document.createElement("h2");
+ heading.textContent=title;
+
+ const native=document.createElement("p");
+ native.textContent="Japanese title: "+(anime.title.native||"Unknown");
+
+ const year=document.createElement("p");
+ year.textContent="Year: "+(anime.seasonYear||anime.startDate?.year||"Unknown");
+
+ const eps=document.createElement("p");
+ eps.textContent="Episodes: "+(anime.episodes||"Unknown");
+
+ const format=document.createElement("p");
+ format.textContent="Type: "+(anime.format||"Unknown");
+
+ const status=document.createElement("p");
+ status.textContent="Status: "+(anime.status||"Unknown");
+
+ const genres=document.createElement("p");
+ genres.textContent="Genres: "+(anime.genres||[]).join(", ");
+
+ const rating=document.createElement("p");
+ rating.textContent="Score: "+(anime.averageScore||"Not rated")+"/100";
+
+ const desc=document.createElement("p");
+ desc.id="description";
+ desc.textContent=anime.description
+  ?anime.description.replace(/<[^>]*>/g," ")
+  :"Description unavailable.";
+
+ const link=document.createElement("a");
+ link.href="https://anilist.co/anime/"+anime.id;
+ link.target="_blank";
+ link.rel="noopener";
+ link.textContent="More information";
+
+ const content=document.getElementById("detailContent");
+ content.append(img,heading,native,year,eps,format,status,genres,rating,desc,link);
+
+ document.getElementById("details").style.display="block";
+}
+
+function closeDetails(){
+ document.getElementById("details").style.display="none";
+}
+
+loadAll();
+</script>
+</body>
+</html>
+
