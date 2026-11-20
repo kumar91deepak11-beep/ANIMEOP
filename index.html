@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,223 +8,326 @@
 <title>ANIMEOP</title>
 
 <style>
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080808;color:white;
+ font-family:Arial,sans-serif
 }
-
-body {
-  margin: 0;
-  background: #080808;
-  color: white;
-  font-family: Arial, sans-serif;
+header{
+ padding:18px;display:flex;
+ justify-content:space-between;
+ background:#111;align-items:center
 }
-
-header {
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #111;
+.logo{color:orange;font-size:27px;font-weight:bold}
+nav{display:flex;gap:10px;padding:15px;overflow:auto}
+button{
+ cursor:pointer;border:0;border-radius:10px;
+ padding:12px;background:#292929;color:white
 }
-
-.logo {
-  color: orange;
-  font-size: 27px;
-  font-weight: bold;
+nav button{border-radius:25px;white-space:nowrap}
+button.active{background:orange;color:black}
+.search{padding:15px}
+input{
+ width:100%;padding:14px;border-radius:10px;
+ background:#181818;border:1px solid #444;
+ color:white;font-size:16px
 }
-
-nav {
-  display: flex;
-  gap: 18px;
-  padding: 16px;
-  overflow-x: auto;
+.hero{
+ margin:15px;padding:30px 20px;min-height:220px;
+ border-radius:18px;
+ background:linear-gradient(120deg,#32104c,#111,#9a3c12)
 }
-
-nav button {
-  background: #222;
-  color: white;
-  border: none;
-  padding: 11px 17px;
-  border-radius: 20px;
+.hero h1{font-size:30px}
+.orange{background:orange;color:black;font-weight:bold}
+h2{margin:20px 15px}
+.grid{
+ display:grid;grid-template-columns:repeat(2,1fr);
+ gap:14px;padding:15px
 }
-
-.search {
-  padding: 15px;
+.card{background:#181818;border-radius:14px;overflow:hidden}
+.poster{
+ height:155px;display:flex;align-items:center;
+ justify-content:center;font-size:48px;
+ background:linear-gradient(140deg,#42105e,#e66b21)
 }
-
-input {
-  width: 100%;
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid #444;
-  background: #181818;
-  color: white;
-  font-size: 16px;
+.card h3,.card p{padding:0 10px}
+.card p{color:#aaa;font-size:13px}
+.card button{margin:0 10px 12px}
+footer{text-align:center;padding:25px;color:#888}
+.modal{
+ display:none;position:fixed;inset:0;z-index:10;
+ background:#000e;overflow:auto;padding:18px
 }
-
-.hero {
-  margin: 15px;
-  padding: 35px 20px;
-  min-height: 230px;
-  border-radius: 18px;
-  background: linear-gradient(120deg,#32104c,#111,#9a3c12);
+.modal.show{display:block}
+.panel{
+ max-width:600px;margin:25px auto;
+ padding:20px;background:#151515;
+ border:1px solid #333;border-radius:16px
 }
-
-.hero h1 {
-  font-size: 30px;
+.close{float:right;background:#333}
+.episodes{display:grid;gap:10px;margin-top:15px}
+.episode{
+ padding:15px;background:#252525;
+ border-radius:10px;text-align:left;width:100%
 }
-
-.hero button {
-  background: orange;
-  color: black;
-  padding: 14px 25px;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-}
-
-h2 {
-  margin: 20px 15px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2,1fr);
-  gap: 14px;
-  padding: 15px;
-}
-
-.card {
-  background: #181818;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.poster {
-  height: 155px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 45px;
-  background: linear-gradient(140deg,#42105e,#e66b21);
-}
-
-.card h3 {
-  font-size: 15px;
-  padding: 0 10px;
-}
-
-.card p {
-  color: #aaa;
-  padding: 0 10px 10px;
-  font-size: 12px;
-}
-
-.card button {
-  margin: 0 10px 12px;
-  background: #ff9d32;
-  border: none;
-  padding: 9px 15px;
-  border-radius: 8px;
-}
-
-footer {
-  text-align: center;
-  padding: 25px;
-  color: #888;
-}
+video{width:100%;background:black;border-radius:12px}
+.small{color:#aaa;font-size:13px;line-height:1.5}
+.player-input{margin:12px 0}
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">ANIMEOP</div>
-  <div>☰</div>
+ <div class="logo">ANIMEOP</div>
+ <div>☰</div>
 </header>
 
 <nav>
-  <button onclick="filterAnime('All')">All</button>
-  <button onclick="filterAnime('Action')">Action</button>
-  <button onclick="filterAnime('Romance')">Romance</button>
-  <button onclick="filterAnime('Fantasy')">Fantasy</button>
-  <button onclick="filterAnime('Comedy')">Comedy</button>
+ <button class="active" onclick="filterAnime('All',this)">All</button>
+ <button onclick="filterAnime('Action',this)">Action</button>
+ <button onclick="filterAnime('Romance',this)">Romance</button>
+ <button onclick="filterAnime('Fantasy',this)">Fantasy</button>
+ <button onclick="filterAnime('Comedy',this)">Comedy</button>
 </nav>
 
 <div class="search">
-  <input
-    id="search"
-    placeholder="🔍 Search Anime..."
-    oninput="renderAnime()">
+ <input id="search" placeholder="🔍 Search Anime..." oninput="renderAnime()">
 </div>
 
 <section class="hero">
-  <h4>ANIMEOP ORIGINAL</h4>
-  <h1>Discover Your Anime World</h1>
-  <p>Explore amazing anime adventures.</p>
-  <button onclick="filterAnime('All')">Explore Anime</button>
+ <h4>ANIMEOP ORIGINAL</h4>
+ <h1>Discover Your Anime World</h1>
+ <p>Explore amazing anime adventures.</p>
+ <button class="orange" onclick="filterAnime('All')">Explore Anime</button>
 </section>
 
 <h2>🔥 Trending Anime</h2>
-
 <div class="grid" id="animeList"></div>
 
-<footer>
-  ANIMEOP © 2026
-  <p>Your Anime Universe</p>
-</footer>
+<footer>ANIMEOP © 2026<p>Your Anime Universe</p></footer>
+
+<!-- Anime Details -->
+<div class="modal" id="detailsModal">
+ <div class="panel">
+  <button class="close" onclick="closeModal('detailsModal')">✕</button>
+  <div id="detailsContent"></div>
+ </div>
+</div>
+
+<!-- Video Player -->
+<div class="modal" id="playerModal">
+ <div class="panel">
+  <button class="close" onclick="closePlayer()">✕</button>
+  <h2 id="playerTitle">ANIMEOP PLAYER</h2>
+
+  <video id="video" controls playsinline></video>
+
+  <p class="small">
+   Apne licensed ya khud ke video ka direct HTTPS MP4/WebM link paste karo.
+  </p>
+
+  <input class="player-input" id="videoURL"
+   placeholder="Paste authorized video URL">
+
+  <button class="orange" onclick="loadVideo()">Load Video</button>
+  <button onclick="nextEpisode()">Next Episode ⏭</button>
+  <p id="playerMessage" class="small"></p>
+ </div>
+</div>
 
 <script>
-
 const anime = [
-  {name:"Chrono Blade",genre:"Action",icon:"⚔️"},
-  {name:"Starlight Sonata",genre:"Romance",icon:"🌸"},
-  {name:"Shadow Kingdom",genre:"Fantasy",icon:"🐉"},
-  {name:"Funny Heroes",genre:"Comedy",icon:"😂"},
-  {name:"Neo Shinjuku",genre:"Action",icon:"🌃"},
-  {name:"Magic World",genre:"Fantasy",icon:"✨"},
-  {name:"Moonlight Love",genre:"Romance",icon:"🌙"},
-  {name:"Cyber Warrior",genre:"Action",icon:"🤖"}
+ {
+  name:"Chrono Blade",genre:"Action",icon:"⚔️",
+  description:"A mysterious swordmaster begins an epic adventure.",
+  seasons:[
+   ["The Awakening","Iron Resolve","Shattered Sky","The Rift Collapses"],
+   ["New Dimension","Final Battle"]
+  ]
+ },
+ {
+  name:"Starlight Sonata",genre:"Romance",icon:"🌸",
+  description:"A beautiful story of music and friendship.",
+  seasons:[["First Meeting","Melody of Love"]]
+ },
+ {
+  name:"Shadow Kingdom",genre:"Fantasy",icon:"🐉",
+  description:"Discover a magical kingdom full of mysteries.",
+  seasons:[["The Lost Kingdom","Dragon Awakening"]]
+ },
+ {
+  name:"Funny Heroes",genre:"Comedy",icon:"😂",
+  description:"A fun adventure with unexpected heroes.",
+  seasons:[["Funny Beginning","Crazy Mission"]]
+ },
+ {
+  name:"Neo Shinjuku",genre:"Action",icon:"🌃",
+  description:"An adventure in a futuristic city.",
+  seasons:[["Gridlock","Cyber Chase"]]
+ },
+ {
+  name:"Magic World",genre:"Fantasy",icon:"✨",
+  description:"Enter a world of magic and adventure.",
+  seasons:[["Magic Begins","The Wizard"]]
+ },
+ {
+  name:"Moonlight Love",genre:"Romance",icon:"🌙",
+  description:"A heartwarming story under the moonlight.",
+  seasons:[["Moonlight","Our Promise"]]
+ },
+ {
+  name:"Cyber Warrior",genre:"Action",icon:"🤖",
+  description:"A futuristic warrior fights for the future.",
+  seasons:[["Cyber Attack","Last Stand"]]
+ }
 ];
 
-let selectedGenre = "All";
+let selectedGenre="All";
+let currentAnime=null;
+let currentSeason=0;
+let currentEpisode=0;
 
-function renderAnime() {
-  const search = document
-    .getElementById("search")
-    .value.toLowerCase();
+function renderAnime(){
+ const search=document.getElementById("search").value.toLowerCase();
+ const list=document.getElementById("animeList");
 
-  const list = document.getElementById("animeList");
+ const filtered=anime.filter(item=>
+  (selectedGenre==="All" || item.genre===selectedGenre) &&
+  item.name.toLowerCase().includes(search)
+ );
 
-  const filtered = anime.filter(item =>
-    (selectedGenre === "All" ||
-     item.genre === selectedGenre) &&
-    item.name.toLowerCase().includes(search)
-  );
+ list.innerHTML=filtered.map(item=>`
+  <div class="card">
+   <div class="poster">${item.icon}</div>
+   <h3>${item.name}</h3>
+   <p>${item.genre}</p>
+   <button class="orange" onclick="showDetails('${item.name}')">
+    Details
+   </button>
+  </div>
+ `).join("");
 
-  list.innerHTML = filtered.map(item => `
-    <div class="card">
-      <div class="poster">${item.icon}</div>
-      <h3>${item.name}</h3>
-      <p>${item.genre}</p>
-      <button onclick="showDetails('${item.name}')">
-        Details
-      </button>
-    </div>
-  `).join("");
+ if(!filtered.length){
+  list.innerHTML="<p>No anime found.</p>";
+ }
 }
 
-function filterAnime(genre) {
-  selectedGenre = genre;
-  renderAnime();
+function filterAnime(genre,button){
+ selectedGenre=genre;
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ if(button)button.classList.add("active");
+ renderAnime();
 }
 
-function showDetails(name) {
-  alert(name + "\\nSample anime details coming soon!");
+function showDetails(name){
+ currentAnime=anime.find(a=>a.name===name);
+ if(!currentAnime)return;
+
+ currentSeason=0;
+
+ document.getElementById("detailsModal").classList.add("show");
+ renderDetails();
+}
+
+function renderDetails(){
+ const item=currentAnime;
+ const seasons=item.seasons;
+
+ document.getElementById("detailsContent").innerHTML=`
+  <h1>${item.icon} ${item.name}</h1>
+  <p>${item.genre}</p>
+  <p class="small">${item.description}</p>
+  <h3>Seasons</h3>
+  ${seasons.map((s,i)=>`
+   <button class="${currentSeason===i?'orange':''}"
+    onclick="selectSeason(${i})">Season ${i+1}</button>
+  `).join(" ")}
+  <h3>Episodes</h3>
+  <div class="episodes">
+   ${seasons[currentSeason].map((ep,i)=>`
+    <button class="episode"
+     onclick="openPlayer(${currentSeason},${i})">
+     ▶ Episode ${i+1} - ${ep}
+    </button>
+   `).join("")}
+  </div>
+ `;
+}
+
+function selectSeason(i){
+ currentSeason=i;
+ renderDetails();
+}
+
+function openPlayer(season,episode){
+ currentSeason=season;
+ currentEpisode=episode;
+
+ document.getElementById("detailsModal").classList.remove("show");
+ document.getElementById("playerModal").classList.add("show");
+
+ document.getElementById("playerTitle").textContent=
+  currentAnime.name+" - "+currentAnime.seasons[season][episode];
+
+ document.getElementById("videoURL").value="";
+ document.getElementById("video").removeAttribute("src");
+ document.getElementById("video").load();
+ document.getElementById("playerMessage").textContent=
+  "Add an authorized video URL to start playback.";
+}
+
+function loadVideo(){
+ const url=document.getElementById("videoURL").value.trim();
+ const video=document.getElementById("video");
+
+ try{
+  const parsed=new URL(url);
+  if(parsed.protocol!=="https:"){
+   throw new Error("HTTPS link required");
+  }
+  video.src=parsed.href;
+  video.load();
+  video.play().catch(()=>{
+   document.getElementById("playerMessage").textContent=
+    "Press Play to start, or check that the video link is valid.";
+  });
+ }catch(e){
+  document.getElementById("playerMessage").textContent=
+   "Please enter a valid HTTPS video URL.";
+ }
+}
+
+function nextEpisode(){
+ const episodes=currentAnime.seasons[currentSeason];
+
+ if(currentEpisode+1<episodes.length){
+  currentEpisode++;
+ }else if(currentSeason+1<currentAnime.seasons.length){
+  currentSeason++;
+  currentEpisode=0;
+ }else{
+  document.getElementById("playerMessage").textContent=
+   "No more episodes available.";
+  return;
+ }
+
+ openPlayer(currentSeason,currentEpisode);
+}
+
+function closePlayer(){
+ const video=document.getElementById("video");
+ video.pause();
+ video.removeAttribute("src");
+ video.load();
+ document.getElementById("playerModal").classList.remove("show");
+}
+
+function closeModal(id){
+ document.getElementById(id).classList.remove("show");
 }
 
 renderAnime();
-
 </script>
 
 </body>
