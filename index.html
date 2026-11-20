@@ -7,46 +7,73 @@
 <title>ANIMEOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#090910;color:white;font-family:Arial}
+body{margin:0;background:#090910;color:#fff;font-family:Arial,sans-serif}
 header{padding:18px;background:#15151f;border-bottom:1px solid #333}
-.logo{font-size:27px;font-weight:bold;color:#b56aff}
+.logo{font-size:28px;font-weight:bold;color:#b56aff}
 main{padding:16px;max-width:1100px;margin:auto}
-h2{margin-top:25px}
-#status{color:#bbb;font-size:14px}
+h2{font-size:22px}
+#status{color:#bbb;line-height:1.5}
+.search{width:100%;padding:13px;border-radius:9px;background:#20202a;border:1px solid #444;color:white;margin:12px 0}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-.card{background:#191923;padding:12px;border-radius:12px;overflow:hidden}
+.card{background:#191923;border-radius:11px;padding:12px;overflow:hidden}
 .card h3{font-size:14px;overflow-wrap:anywhere}
-.card p{font-size:12px;color:#bbb}
-button{background:#963be8;color:white;border:0;border-radius:8px;padding:10px;cursor:pointer}
+.card p{font-size:12px;color:#bbb;overflow-wrap:anywhere}
+button{background:#963be8;color:white;border:0;border-radius:8px;padding:11px;cursor:pointer}
+#playerBox{display:none;background:#191923;padding:14px;border-radius:12px;margin-top:22px}
 video{width:100%;background:#000;border-radius:10px;margin-top:10px}
-a{color:#c89aff}
-#playerBox{display:none;background:#191923;padding:14px;border-radius:12px;margin-top:20px}
+a{color:#c99cff}
+.small{font-size:12px;color:#aaa}
 @media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
-<header><div class="logo">ANIMEOP</div></header>
+
+<header>
+<div class="logo">ANIMEOP</div>
+</header>
+
 <main>
+
 <h2>Free Anime Videos</h2>
-<p>Public domain and selected Creative Commons videos</p>
-<p id="status">Loading available videos...</p>
+<p class="small">Search for Japanese anime and animation videos</p>
+
+<input class="search" id="search"
+placeholder="Search anime videos..."
+onkeydown="if(event.key==='Enter')loadVideos()">
+
+<button onclick="loadVideos()">SEARCH VIDEOS</button>
+
+<p id="status">Loading videos...</p>
+
 <div class="grid" id="videos"></div>
 
 <div id="playerBox">
-<h2 id="playingTitle">Watch</h2>
+<h2 id="playingTitle">Watch Anime</h2>
 <video id="player" controls playsinline></video>
 <p id="license"></p>
-<a id="sourceLink" target="_blank" rel="noopener">View original file and license</a>
+<p id="creator"></p>
+<a id="sourceLink" target="_blank" rel="noopener">
+Original video and license details
+</a>
 </div>
+
 </main>
 
 <script>
 const API="https://commons.wikimedia.org/w/api.php";
+
 const grid=document.getElementById("videos");
 const statusText=document.getElementById("status");
 
-function allowedLicense(value){
- const s=(value||"").toLowerCase();
+function cleanText(value){
+ const div=document.createElement("div");
+ div.innerHTML=value||"";
+ return div.textContent.trim();
+}
+
+function isAllowedLicense(name){
+ const s=(name||"").toLowerCase();
+
  return s.includes("cc by-sa") ||
         s.includes("cc by ") ||
         s.includes("cc0") ||
@@ -54,40 +81,70 @@ function allowedLicense(value){
 }
 
 async function loadVideos(){
+
+ const keyword=document.getElementById("search").value.trim()||"anime";
+
+ grid.innerHTML="";
+ statusText.textContent="Searching videos...";
+
+ const params=new URLSearchParams({
+  action:"query",
+  generator:"search",
+  gsrsearch:"filetype:video "+keyword,
+  gsrnamespace:"6",
+  gsrlimit:"50",
+  prop:"imageinfo",
+  iiprop:"url|mime|extmetadata",
+  format:"json",
+  origin:"*"
+ });
+
  try{
-  const params=new URLSearchParams({
-   action:"query",
-   generator:"categorymembers",
-   gcmtitle:"Category:Anime videos",
-   gcmtype:"file",
-   gcmlimit:"50",
-   prop:"imageinfo",
-   iiprop:"url|extmetadata",
-   format:"json",
-   origin:"*"
-  });
 
   const response=await fetch(API+"?"+params);
-  if(!response.ok) throw new Error("API error");
+
+  if(!response.ok){
+   throw new Error("API error");
+  }
+
   const data=await response.json();
+
   const pages=Object.values(data.query?.pages||{});
+
   let count=0;
 
   for(const item of pages){
+
    const info=item.imageinfo?.[0];
+
    if(!info || !info.url) continue;
 
-   const mime=info.mime||"";
-   if(!mime.startsWith("video/")) continue;
+   if(!info.mime || !info.mime.startsWith("video/")){
+    continue;
+   }
 
    const meta=info.extmetadata||{};
-   const license=meta.LicenseShortName?.value||"";
-   const terms=meta.UsageTerms?.value||"";
-   const creator=meta.Artist?.value||"Creator not listed";
 
-   if(!allowedLicense(license+" "+terms)) continue;
+   const licenseName=cleanText(
+    meta.LicenseShortName?.value
+   );
+
+   const licenseURL=meta.LicenseUrl?.value||"";
+
+   const terms=cleanText(
+    meta.UsageTerms?.value
+   );
+
+   if(!isAllowedLicense(licenseName+" "+terms)){
+    continue;
+   }
+
+   const creator=cleanText(
+    meta.Artist?.value||"Creator not listed"
+   );
 
    const title=item.title.replace(/^File:/,"");
+
    const card=document.createElement("article");
    card.className="card";
 
@@ -95,34 +152,46 @@ async function loadVideos(){
    heading.textContent=title;
 
    const lic=document.createElement("p");
-   lic.textContent="License: "+license;
+   lic.textContent="License: "+licenseName;
 
-   const credit=document.createElement("p");
-   credit.textContent="Creator: "+creator.replace(/<[^>]*>/g,"");
+   const author=document.createElement("p");
+   author.textContent="Creator: "+creator;
 
    const play=document.createElement("button");
    play.textContent="WATCH VIDEO";
+
    play.onclick=()=>playVideo(
-     title,info.url,license,creator,info.descriptionurl
+    title,
+    info.url,
+    licenseName,
+    creator,
+    info.descriptionurl,
+    licenseURL
    );
 
-   card.append(heading,lic,credit,play);
+   card.append(heading,lic,author,play);
+
    grid.appendChild(card);
+
    count++;
   }
 
   statusText.textContent=count
-   ? count+" matching video files found. Check each original license before reuse."
-   : "No matching videos found right now. Try again later.";
+   ? count+" videos found. Check original license before reuse."
+   : "No matching licensed videos found. Try another search.";
 
  }catch(error){
-  statusText.textContent=
-   "Videos load nahi hue. Internet connection check karke page refresh karo.";
+
   console.error(error);
+
+  statusText.textContent=
+   "Videos load nahi hue. Internet check karke dobara try karo.";
+
  }
 }
 
-function playVideo(title,url,license,creator,source){
+function playVideo(title,url,license,creator,source,licenseURL){
+
  const box=document.getElementById("playerBox");
  const video=document.getElementById("player");
 
@@ -131,17 +200,37 @@ function playVideo(title,url,license,creator,source){
  video.load();
 
  document.getElementById("playingTitle").textContent=title;
- document.getElementById("license").textContent=
-  "License: "+license+" | Creator: "+creator.replace(/<[^>]*>/g,"");
 
- document.getElementById("sourceLink").href=source;
- video.src=url;
+ document.getElementById("license").textContent=
+  "License: "+license;
+
+ document.getElementById("creator").textContent=
+  "Creator: "+creator;
+
+ const sourceLink=document.getElementById("sourceLink");
+ sourceLink.href=source;
+
  box.style.display="block";
+
+ if(licenseURL){
+  const licenseInfo=document.createElement("p");
+  licenseInfo.className="small";
+  licenseInfo.textContent="License details: "+licenseURL;
+  box.appendChild(licenseInfo);
+ }
+
+ video.src=url;
+
  box.scrollIntoView({behavior:"smooth"});
- video.play().catch(()=>{});
+
+ video.play().catch(()=>{
+  document.getElementById("license").textContent+=
+   " | Press Play to start.";
+ });
 }
 
 loadVideos();
 </script>
+
 </body>
 </html>
