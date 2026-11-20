@@ -4,625 +4,418 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#080808">
-<title>ANIMEOP</title>
-
-<style>
-*{box-sizing:border-box}
-body{
- margin:0;background:#080808;color:white;
- font-family:Arial,sans-serif
-}
-header{
- padding:18px;display:flex;
- justify-content:space-between;
- background:#111;align-items:center
-}
-.logo{color:orange;font-size:27px;font-weight:bold}
-nav{display:flex;gap:10px;padding:15px;overflow:auto}
-button{
- cursor:pointer;border:0;border-radius:10px;
- padding:12px;background:#292929;color:white
-}
-nav button{border-radius:25px;white-space:nowrap}
-button.active{background:orange;color:black}
-.search{padding:15px}
-input{
- width:100%;padding:14px;border-radius:10px;
- background:#181818;border:1px solid #444;
- color:white;font-size:16px
-}
-.hero{
- margin:15px;padding:30px 20px;min-height:220px;
- border-radius:18px;
- background:linear-gradient(120deg,#32104c,#111,#9a3c12)
-}
-.hero h1{font-size:30px}
-.orange{background:orange;color:black;font-weight:bold}
-h2{margin:20px 15px}
-.grid{
- display:grid;grid-template-columns:repeat(2,1fr);
- gap:14px;padding:15px
-}
-.card{background:#181818;border-radius:14px;overflow:hidden}
-.poster{
- height:155px;display:flex;align-items:center;
- justify-content:center;font-size:48px;
- background:linear-gradient(140deg,#42105e,#e66b21)
-}
-.card h3,.card p{padding:0 10px}
-.card p{color:#aaa;font-size:13px}
-.card button{margin:0 10px 12px}
-footer{text-align:center;padding:25px;color:#888}
-.modal{
- display:none;position:fixed;inset:0;z-index:10;
- background:#000e;overflow:auto;padding:18px
-}
-.modal.show{display:block}
-.panel{
- max-width:600px;margin:25px auto;
- padding:20px;background:#151515;
- border:1px solid #333;border-radius:16px
-}
-.close{float:right;background:#333}
-.episodes{display:grid;gap:10px;margin-top:15px}
-.episode{
- padding:15px;background:#252525;
- border-radius:10px;text-align:left;width:100%
-}
-video{width:100%;background:black;border-radius:12px}
-.small{color:#aaa;font-size:13px;line-height:1.5}
-.player-input{margin:12px 0}
-</style>
-</head>
-
-<body>
-
-<header>
- <div class="logo">ANIMEOP</div>
- <div>☰</div>
-</header>
-
-<nav>
- <button class="active" onclick="filterAnime('All',this)">All</button>
- <button onclick="filterAnime('Action',this)">Action</button>
- <button onclick="filterAnime('Romance',this)">Romance</button>
- <button onclick="filterAnime('Fantasy',this)">Fantasy</button>
- <button onclick="filterAnime('Comedy',this)">Comedy</button>
-</nav>
-
-<div class="search">
- <input id="search" placeholder="🔍 Search Anime..." oninput="renderAnime()">
-</div>
-
-<section class="hero">
- <h4>ANIMEOP ORIGINAL</h4>
- <h1>Discover Your Anime World</h1>
- <p>Explore amazing anime adventures.</p>
- <button class="orange" onclick="filterAnime('All')">Explore Anime</button>
-</section>
-
-<h2>🔥 Trending Anime</h2>
-<div class="grid" id="animeList"></div>
-
-<footer>ANIMEOP © 2026<p>Your Anime Universe</p></footer>
-
-<!-- Anime Details -->
-<div class="modal" id="detailsModal">
- <div class="panel">
-  <button class="close" onclick="closeModal('detailsModal')">✕</button>
-  <div id="detailsContent"></div>
- </div>
-</div>
-
-<!-- Video Player -->
-<div class="modal" id="playerModal">
- <div class="panel">
-  <button class="close" onclick="closePlayer()">✕</button>
-  <h2 id="playerTitle">ANIMEOP PLAYER</h2>
-
-  <video id="video" controls playsinline></video>
-
-  <p class="small">
-   Apne licensed ya khud ke video ka direct HTTPS MP4/WebM link paste karo.
-  </p>
-
-  <input class="player-input" id="videoURL"
-   placeholder="Paste authorized video URL">
-
-  <button class="orange" onclick="loadVideo()">Load Video</button>
-  <button onclick="nextEpisode()">Next Episode ⏭</button>
-  <p id="playerMessage" class="small"></p>
- </div>
-</div>
-
-<script>
-const anime = [
- {
-  name:"Chrono Blade",genre:"Action",icon:"⚔️",
-  description:"A mysterious swordmaster begins an epic adventure.",
-  seasons:[
-   ["The Awakening","Iron Resolve","Shattered Sky","The Rift Collapses"],
-   ["New Dimension","Final Battle"]
-  ]
- },
- {
-  name:"Starlight Sonata",genre:"Romance",icon:"🌸",
-  description:"A beautiful story of music and friendship.",
-  seasons:[["First Meeting","Melody of Love"]]
- },
- {
-  name:"Shadow Kingdom",genre:"Fantasy",icon:"🐉",
-  description:"Discover a magical kingdom full of mysteries.",
-  seasons:[["The Lost Kingdom","Dragon Awakening"]]
- },
- {
-  name:"Funny Heroes",genre:"Comedy",icon:"😂",
-  description:"A fun adventure with unexpected heroes.",
-  seasons:[["Funny Beginning","Crazy Mission"]]
- },
- {
-  name:"Neo Shinjuku",genre:"Action",icon:"🌃",
-  description:"An adventure in a futuristic city.",
-  seasons:[["Gridlock","Cyber Chase"]]
- },
- {
-  name:"Magic World",genre:"Fantasy",icon:"✨",
-  description:"Enter a world of magic and adventure.",
-  seasons:[["Magic Begins","The Wizard"]]
- },
- {
-  name:"Moonlight Love",genre:"Romance",icon:"🌙",
-  description:"A heartwarming story under the moonlight.",
-  seasons:[["Moonlight","Our Promise"]]
- },
- {
-  name:"Cyber Warrior",genre:"Action",icon:"🤖",
-  description:"A futuristic warrior fights for the future.",
-  seasons:[["Cyber Attack","Last Stand"]]
- }
-];
-
-let selectedGenre="All";
-let currentAnime=null;
-let currentSeason=0;
-let currentEpisode=0;
-
-function renderAnime(){
- const search=document.getElementById("search").value.toLowerCase();
- const list=document.getElementById("animeList");
-
- const filtered=anime.filter(item=>
-  (selectedGenre==="All" || item.genre===selectedGenre) &&
-  item.name.toLowerCase().includes(search)
- );
-
- list.innerHTML=filtered.map(item=>`
-  <div class="card">
-   <div class="poster">${item.icon}</div>
-   <h3>${item.name}</h3>
-   <p>${item.genre}</p>
-   <button class="orange" onclick="showDetails('${item.name}')">
-    Details
-   </button>
-  </div>
- `).join("");
-
- if(!filtered.length){
-  list.innerHTML="<p>No anime found.</p>";
- }
-}
-
-function filterAnime(genre,button){
- selectedGenre=genre;
- document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
- if(button)button.classList.add("active");
- renderAnime();
-}
-
-function showDetails(name){
- currentAnime=anime.find(a=>a.name===name);
- if(!currentAnime)return;
-
- currentSeason=0;
-
- document.getElementById("detailsModal").classList.add("show");
- renderDetails();
-}
-
-function renderDetails(){
- const item=currentAnime;
- const seasons=item.seasons;
-
- document.getElementById("detailsContent").innerHTML=`
-  <h1>${item.icon} ${item.name}</h1>
-  <p>${item.genre}</p>
-  <p class="small">${item.description}</p>
-  <h3>Seasons</h3>
-  ${seasons.map((s,i)=>`
-   <button class="${currentSeason===i?'orange':''}"
-    onclick="selectSeason(${i})">Season ${i+1}</button>
-  `).join(" ")}
-  <h3>Episodes</h3>
-  <div class="episodes">
-   ${seasons[currentSeason].map((ep,i)=>`
-    <button class="episode"
-     onclick="openPlayer(${currentSeason},${i})">
-     ▶ Episode ${i+1} - ${ep}
-    </button>
-   `).join("")}
-  </div>
- `;
-}
-
-function selectSeason(i){
- currentSeason=i;
- renderDetails();
-}
-
-function openPlayer(season,episode){
- currentSeason=season;
- currentEpisode=episode;
-
- document.getElementById("detailsModal").classList.remove("show");
- document.getElementById("playerModal").classList.add("show");
-
- document.getElementById("playerTitle").textContent=
-  currentAnime.name+" - "+currentAnime.seasons[season][episode];
-
- document.getElementById("videoURL").value="";
- document.getElementById("video").removeAttribute("src");
- document.getElementById("video").load();
- document.getElementById("playerMessage").textContent=
-  "Add an authorized video URL to start playback.";
-}
-
-function loadVideo(){
- const url=document.getElementById("videoURL").value.trim();
- const video=document.getElementById("video");
-
- try{
-  const parsed=new URL(url);
-  if(parsed.protocol!=="https:"){
-   throw new Error("HTTPS link required");
-  }
-  video.src=parsed.href;
-  video.load();
-  video.play().catch(()=>{
-   document.getElementById("playerMessage").textContent=
-    "Press Play to start, or check that the video link is valid.";
-  });
- }catch(e){
-  document.getElementById("playerMessage").textContent=
-   "Please enter a valid HTTPS video URL.";
- }
-}
-
-function nextEpisode(){
- const episodes=currentAnime.seasons[currentSeason];
-
- if(currentEpisode+1<episodes.length){
-  currentEpisode++;
- }else if(currentSeason+1<currentAnime.seasons.length){
-  currentSeason++;
-  currentEpisode=0;
- }else{
-  document.getElementById("playerMessage").textContent=
-   "No more episodes available.";
-  return;
- }
-
- openPlayer(currentSeason,currentEpisode);
-}
-
-function closePlayer(){
- const video=document.getElementById("video");
- video.pause();
- video.removeAttribute("src");
- video.load();
- document.getElementById("playerModal").classList.remove("show");
-}
-
-function closeModal(id){
- document.getElementById(id).classList.remove("show");
-}
-
-renderAnime();
-</script>
-
-</body>
-</html>
-
-<div class="video-container">
-  <iframe
-    id="youtubePlayer"
-    width="100%"
-    height="230"
-    src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
-    title="ANIMEOP Video Player"
-    frameborder="0"
-    allowfullscreen>
-  </iframe>
-</div>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANIMEOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080808;color:#fff;font-family:Arial,sans-serif}
-header{padding:18px 16px;background:#111;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #292929}
-.logo{font-size:26px;font-weight:900;color:#ff6b00;letter-spacing:1px}
-.tag{font-size:11px;color:#aaa}
-main{max-width:1100px;margin:auto;padding:16px}
-input{width:100%;padding:14px;border-radius:10px;border:1px solid #333;background:#171717;color:white;font-size:15px;margin:14px 0}
-h2{font-size:20px;margin:22px 0 14px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-.card{background:#151515;border:1px solid #292929;border-radius:12px;overflow:hidden;cursor:pointer}
-.poster{height:145px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;background:linear-gradient(145deg,#321400,#111);color:#ff8b32;font-size:22px;font-weight:900}
-.card-info{padding:12px}
-.card-info h3{font-size:15px;margin:0 0 7px}
-.muted{color:#aaa;font-size:12px}
-button{border:0;border-radius:8px;background:#ff6b00;color:white;padding:11px 14px;font-weight:bold;cursor:pointer}
-button.secondary{background:#252525;color:#ddd;border:1px solid #444}
-button.active{background:#ff6b00;color:white}
-.hidden{display:none!important}
-.back{margin:8px 0 18px}
+body{margin:0;background:#09090d;color:#fff;font-family:Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#111116;padding:15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #292933}
+.logo{font-size:25px;font-weight:900;color:#a855f7;letter-spacing:1px}
+button,select,input{font:inherit}
+button{cursor:pointer}
+main{max-width:1200px;margin:auto;padding:16px}
+h2{font-size:21px}
+.search{width:100%;padding:14px;border-radius:10px;border:1px solid #333;background:#1b1b23;color:white;margin:12px 0}
+.filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.filters select{min-width:0;width:100%;padding:12px;background:#202027;color:white;border:1px solid #383841;border-radius:9px}
+.actions{display:flex;gap:9px;margin:14px 0;flex-wrap:wrap}
+.btn{border:0;background:#8b35dc;color:white;padding:11px 15px;border-radius:9px}
+.btn.secondary{background:#292932}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{background:#15151c;border-radius:11px;overflow:hidden;cursor:pointer;min-width:0}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#252530}
+.card h3{font-size:14px;margin:10px;line-height:1.4}
+.meta{color:#aaa;font-size:12px;margin:0 10px 12px}
+#details{display:none}
+.back{margin:5px 0 18px}
+.hero{display:grid;grid-template-columns:120px 1fr;gap:15px}
+.hero img{width:120px;border-radius:10px}
+.hero h2{margin:0 0 8px}
+.description{color:#ccc;line-height:1.6;font-size:14px}
 .season-list,.episode-list{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
-.episode{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;background:#171717;border:1px solid #333;padding:14px;color:white}
-.episode small{color:#aaa}
-.player-wrap{margin-top:20px;background:#151515;border:1px solid #333;border-radius:12px;padding:12px}
-iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px;background:#000}
-#playerTitle{font-size:16px;margin:12px 0}
-.notice{color:#aaa;font-size:13px;line-height:1.6;background:#151515;padding:13px;border-radius:10px}
-footer{text-align:center;padding:30px;color:#666;font-size:12px}
-@media(min-width:650px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.poster{height:190px}}
-@media(min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.season-btn,.episode-btn{padding:10px 13px;border-radius:8px;border:1px solid #444;background:#202027;color:white}
+.season-btn.active,.episode-btn.active{background:#8b35dc;border-color:#8b35dc}
+.player{width:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
+.notice{padding:13px;background:#211b2b;border:1px solid #57357b;border-radius:9px;color:#ddd;line-height:1.5}
+.small{font-size:12px;color:#aaa}
+#message{text-align:center;color:#bbb;padding:30px}
+footer{text-align:center;padding:25px;color:#777;font-size:12px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.filters{grid-template-columns:repeat(4,minmax(0,1fr))}.hero{grid-template-columns:180px 1fr}.hero img{width:180px}}
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <div class="logo">ANIMEOP</div>
-    <div class="tag">YOUR ANIME WORLD</div>
-  </div>
-  <div class="tag">ANIME STREAMING</div>
+  <div class="logo">ANIMEOP</div>
+  <button class="btn secondary" onclick="home()">HOME</button>
 </header>
 
 <main>
-  <section id="homePage">
-    <input id="search" type="search" placeholder="Search anime..." oninput="renderAnime()">
-    <h2>🔥 Popular Anime</h2>
-    <div class="grid" id="animeGrid"></div>
-    <p class="notice">Choose an anime to view its seasons and episodes.</p>
-  </section>
+<section id="homePage">
+  <h2>Discover Anime</h2>
+  <input id="search" class="search" placeholder="Search anime..." oninput="render()">
 
-  <section id="detailsPage" class="hidden">
-    <button class="secondary back" onclick="goHome()">← Back to Anime</button>
-    <div id="animeDetails"></div>
-    <h2>📺 Select Season</h2>
-    <div class="season-list" id="seasonButtons"></div>
-    <h2>Episodes</h2>
-    <div class="episode-list" id="episodeList"></div>
-    <div class="player-wrap hidden" id="playerBox">
-      <div id="playerTitle">Now Playing</div>
-      <iframe id="youtubePlayer" title="Anime episode player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      <p class="muted">Video playback depends on YouTube availability, region and embedding permission.</p>
-    </div>
-  </section>
+  <div class="filters">
+    <select id="genre" onchange="render()">
+      <option value="">All Genres</option>
+    </select>
+    <select id="season" onchange="render()">
+      <option value="">All Seasons</option>
+      <option value="WINTER">Winter</option>
+      <option value="SPRING">Spring</option>
+      <option value="SUMMER">Summer</option>
+      <option value="FALL">Fall</option>
+    </select>
+    <select id="year" onchange="render()">
+      <option value="">All Years</option>
+    </select>
+    <select id="status" onchange="render()">
+      <option value="">All Status</option>
+      <option value="RELEASING">Currently Airing</option>
+      <option value="FINISHED">Finished</option>
+      <option value="NOT_YET_RELEASED">Upcoming</option>
+    </select>
+    <select id="sort" onchange="loadAnime()">
+      <option value="TRENDING_DESC">Trending</option>
+      <option value="START_DATE_DESC">Newest</option>
+      <option value="POPULARITY_DESC">Popular</option>
+    </select>
+    <button class="btn" onclick="loadAnime()">Refresh Anime</button>
+  </div>
+
+  <h2 id="sectionTitle">Trending Anime</h2>
+  <div id="message">Loading anime...</div>
+  <div class="grid" id="animeGrid"></div>
+  <div class="actions">
+    <button class="btn secondary" onclick="nextPage()">Load More Anime</button>
+  </div>
+</section>
+
+<section id="details">
+  <button class="btn secondary back" onclick="home()">← Back</button>
+  <div id="detailContent"></div>
+</section>
 </main>
 
-<footer>ANIMEOP • Anime for everyone</footer>
+<footer>ANIMEOP • Anime information powered by AniList</footer>
 
 <script>
-// Add official YouTube video IDs in the videoId field.
-// Example format: videoId: "ABCDEFGHIJK" (11-character YouTube ID)
-// Leave videoId empty until you have a permitted official video.
+const API = "https://graphql.anilist.co";
 
-const animeData = [
-  {
-    id:1, title:"Solo Leveling", genre:"Action • Fantasy",
-    description:"Follow an exciting fantasy adventure.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
-  },
-  {
-    id:2, title:"Naruto", genre:"Action • Adventure",
-    description:"A ninja adventure full of challenges.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
-  },
-  {
-    id:3, title:"Demon Slayer", genre:"Action • Fantasy",
-    description:"A fantasy story about courage and family.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
-  },
-  {
-    id:4, title:"One Piece", genre:"Adventure • Fantasy",
-    description:"A grand adventure across the seas.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
-  },
-  {
-    id:5, title:"Jujutsu Kaisen", genre:"Action • Supernatural",
-    description:"A supernatural action adventure.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
-  },
-  {
-    id:6, title:"My Hero Academia", genre:"Action • School",
-    description:"A world of heroes and special abilities.",
-    seasons:[
-      {name:"Season 1",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]},
-      {name:"Season 2",episodes:[
-        {title:"Episode 1",videoId:""},
-        {title:"Episode 2",videoId:""},
-        {title:"Episode 3",videoId:""}
-      ]}
-    ]
+const LIST_QUERY = `
+query ($page:Int, $sort:[MediaSort]) {
+  Page(page:$page, perPage:24) {
+    pageInfo { hasNextPage }
+    media(type:ANIME, sort:$sort, isAdult:false) {
+      id
+      title { romaji english }
+      coverImage { extraLarge large }
+      episodes
+      season
+      seasonYear
+      genres
+      format
+      status
+      averageScore
+      description(asHtml:false)
+    }
   }
-];
+}`;
 
-let currentAnime = null;
-let currentSeason = 0;
+const DETAIL_QUERY = `
+query ($id:Int) {
+  Media(id:$id, type:ANIME) {
+    id
+    title { romaji english }
+    coverImage { extraLarge large }
+    bannerImage
+    episodes
+    season
+    seasonYear
+    genres
+    format
+    status
+    averageScore
+    description(asHtml:false)
+    siteUrl
+    relations {
+      edges {
+        relationType
+        node {
+          id
+          type
+          title { romaji english }
+          coverImage { large }
+          episodes
+          format
+          seasonYear
+        }
+      }
+    }
+  }
+}`;
 
-function renderAnime(){
-  const query = document.getElementById("search").value.toLowerCase();
-  const filtered = animeData.filter(a =>
-    a.title.toLowerCase().includes(query) ||
-    a.genre.toLowerCase().includes(query)
-  );
+// Add only official videos that you are allowed to embed.
+// Format: "ANILIST_ID-EPISODE_NUMBER": "YOUTUBE_VIDEO_ID"
+const officialVideos = {
+  // "1-1": "YOUR_VIDEO_ID"
+};
 
-  document.getElementById("animeGrid").innerHTML = filtered.map(a => `
-    <div class="card" onclick="openAnime(${a.id})">
-      <div class="poster">${a.title}</div>
-      <div class="card-info">
-        <h3>${a.title}</h3>
-        <div class="muted">${a.genre}</div>
-      </div>
-    </div>
-  `).join("") || '<p class="muted">No anime found.</p>';
+let animeList = [];
+let page = 1;
+let hasNext = false;
+let selectedAnime = null;
+let selectedEpisode = 1;
+
+async function api(query, variables={}) {
+  const response = await fetch(API, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Accept":"application/json"
+    },
+    body:JSON.stringify({query,variables})
+  });
+  if(!response.ok) throw new Error("API request failed: "+response.status);
+  const json = await response.json();
+  if(json.errors) throw new Error(json.errors[0].message);
+  return json.data;
 }
 
-function openAnime(id){
-  currentAnime = animeData.find(a => a.id === id);
-  if(!currentAnime) return;
-
-  document.getElementById("homePage").classList.add("hidden");
-  document.getElementById("detailsPage").classList.remove("hidden");
-
-  document.getElementById("animeDetails").innerHTML = `
-    <div class="poster" style="height:180px;border-radius:12px">${currentAnime.title}</div>
-    <h2>${currentAnime.title}</h2>
-    <p class="muted">${currentAnime.genre}</p>
-    <p>${currentAnime.description}</p>
-  `;
-
-  currentSeason = 0;
-  document.getElementById("playerBox").classList.add("hidden");
-  document.getElementById("youtubePlayer").src = "";
-  renderSeasons();
-  window.scrollTo(0,0);
+async function loadAnime(reset=true) {
+  if(reset) {
+    page=1;
+    animeList=[];
+    document.getElementById("animeGrid").innerHTML="";
+  }
+  document.getElementById("message").textContent="Loading anime...";
+  try {
+    const sort=document.getElementById("sort").value;
+    const data=await api(LIST_QUERY,{page,sort:[sort]});
+    animeList=reset ? data.Page.media : animeList.concat(data.Page.media);
+    hasNext=data.Page.pageInfo.hasNextPage;
+    fillFilters();
+    render();
+    document.getElementById("message").textContent=
+      animeList.length ? "" : "No anime found.";
+  } catch(error) {
+    document.getElementById("message").textContent=
+      "Anime load nahi hua. Internet check karke Refresh Anime dabao.";
+    console.error(error);
+  }
 }
 
-function renderSeasons(){
-  document.getElementById("seasonButtons").innerHTML =
-    currentAnime.seasons.map((s,i) => `
-      <button class="${i===currentSeason?'active':'secondary'}"
-        onclick="selectSeason(${i})">${s.name}</button>
-    `).join("");
-
-  renderEpisodes();
-}
-
-function selectSeason(index){
-  currentSeason = index;
-  document.getElementById("playerBox").classList.add("hidden");
-  document.getElementById("youtubePlayer").src = "";
-  renderSeasons();
-}
-
-function renderEpisodes(){
-  const episodes = currentAnime.seasons[currentSeason].episodes;
-  document.getElementById("episodeList").innerHTML = episodes.map((ep,i) => `
-    <button class="episode" onclick="playEpisode(${i})">
-      <span>▶ ${ep.title}</span>
-      <small>${ep.videoId ? "Watch" : "Video not added"}</small>
-    </button>
-  `).join("");
-}
-
-function playEpisode(index){
-  const ep = currentAnime.seasons[currentSeason].episodes[index];
-  const box = document.getElementById("playerBox");
-
-  if(!/^[a-zA-Z0-9_-]{11}$/.test(ep.videoId)){
-    alert("Is episode ka official YouTube video ID abhi add nahi hua hai.");
+function nextPage() {
+  if(!hasNext) {
+    document.getElementById("message").textContent="No more results.";
     return;
   }
-
-  document.getElementById("playerTitle").textContent =
-    currentAnime.title + " • " +
-    currentAnime.seasons[currentSeason].name + " • " + ep.title;
-
-  document.getElementById("youtubePlayer").src =
-    "https://www.youtube-nocookie.com/embed/" +
-    encodeURIComponent(ep.videoId);
-
-  box.classList.remove("hidden");
-  box.scrollIntoView({behavior:"smooth",block:"start"});
+  page++;
+  loadAnime(false);
 }
 
-function goHome(){
-  document.getElementById("youtubePlayer").src = "";
-  document.getElementById("playerBox").classList.add("hidden");
-  document.getElementById("detailsPage").classList.add("hidden");
-  document.getElementById("homePage").classList.remove("hidden");
+function fillFilters() {
+  const genres=[...new Set(animeList.flatMap(a=>a.genres||[]))].sort();
+  const genre=document.getElementById("genre");
+  const oldGenre=genre.value;
+  genre.innerHTML='<option value="">All Genres</option>';
+  genres.forEach(g=>{
+    const option=document.createElement("option");
+    option.value=g;
+    option.textContent=g;
+    genre.appendChild(option);
+  });
+  genre.value=oldGenre;
+
+  const years=[...new Set(animeList.map(a=>a.seasonYear).filter(Boolean))].sort((a,b)=>b-a);
+  const year=document.getElementById("year");
+  const oldYear=year.value;
+  year.innerHTML='<option value="">All Years</option>';
+  years.forEach(y=>{
+    const option=document.createElement("option");
+    option.value=y;
+    option.textContent=y;
+    year.appendChild(option);
+  });
+  year.value=oldYear;
+}
+
+function render() {
+  const search=document.getElementById("search").value.toLowerCase();
+  const genre=document.getElementById("genre").value;
+  const season=document.getElementById("season").value;
+  const year=document.getElementById("year").value;
+  const status=document.getElementById("status").value;
+
+  const filtered=animeList.filter(a=>{
+    const title=(a.title.english||a.title.romaji||"").toLowerCase();
+    return title.includes(search)
+      && (!genre || a.genres.includes(genre))
+      && (!season || a.season===season)
+      && (!year || String(a.seasonYear)===year)
+      && (!status || a.status===status);
+  });
+
+  const grid=document.getElementById("animeGrid");
+  grid.innerHTML="";
+  filtered.forEach(a=>{
+    const card=document.createElement("article");
+    card.className="card";
+    const img=document.createElement("img");
+    img.src=a.coverImage.extraLarge||a.coverImage.large;
+    img.alt=a.title.english||a.title.romaji;
+    img.loading="lazy";
+    const title=document.createElement("h3");
+    title.textContent=a.title.english||a.title.romaji;
+    const meta=document.createElement("div");
+    meta.className="meta";
+    meta.textContent=(a.seasonYear||"Year unknown")+" • "+(a.episodes||"?")+" Episodes";
+    card.append(img,title,meta);
+    card.onclick=()=>openDetails(a.id);
+    grid.appendChild(card);
+  });
+  document.getElementById("sectionTitle").textContent=
+    "Anime Catalogue ("+filtered.length+")";
+}
+
+async function openDetails(id) {
+  document.getElementById("homePage").style.display="none";
+  document.getElementById("details").style.display="block";
+  document.getElementById("detailContent").innerHTML=
+    '<p id="message">Loading anime details...</p>';
+  window.scrollTo(0,0);
+
+  try {
+    const data=await api(DETAIL_QUERY,{id});
+    selectedAnime=data.Media;
+    selectedEpisode=1;
+    showDetails();
+  } catch(error) {
+    document.getElementById("detailContent").textContent=
+      "Details load nahi hue. Please try again.";
+    console.error(error);
+  }
+}
+
+function showDetails() {
+  const a=selectedAnime;
+  const root=document.getElementById("detailContent");
+  root.innerHTML="";
+
+  const hero=document.createElement("div");
+  hero.className="hero";
+  const img=document.createElement("img");
+  img.src=a.coverImage.extraLarge||a.coverImage.large;
+  img.alt="";
+  const info=document.createElement("div");
+  const title=document.createElement("h2");
+  title.textContent=a.title.english||a.title.romaji;
+  const meta=document.createElement("p");
+  meta.className="small";
+  meta.textContent=(a.seasonYear||"Year unknown")+" • "+
+    (a.format||"Anime")+" • "+(a.status||"");
+  const genres=document.createElement("p");
+  genres.className="small";
+  genres.textContent=(a.genres||[]).join(" • ");
+  info.append(title,meta,genres);
+  hero.append(img,info);
+  root.appendChild(hero);
+
+  const desc=document.createElement("p");
+  desc.className="description";
+  desc.textContent=a.description||"No description available.";
+  root.appendChild(desc);
+
+  const relatedTitle=document.createElement("h2");
+  relatedTitle.textContent="Related Seasons & Stories";
+  root.appendChild(relatedTitle);
+
+  const related=document.createElement("div");
+  related.className="season-list";
+  const relatedItems=(a.relations?.edges||[]).filter(e=>
+    e.node.type==="ANIME"
+  );
+  if(!relatedItems.length) {
+    const note=document.createElement("p");
+    note.className="small";
+    note.textContent="No related seasons listed.";
+    related.appendChild(note);
+  }
+  relatedItems.forEach(edge=>{
+    const b=document.createElement("button");
+    b.className="season-btn";
+    b.textContent=(edge.node.title.english||edge.node.title.romaji)+
+      " ("+edge.relationType.replaceAll("_"," ")+")";
+    b.onclick=()=>openDetails(edge.node.id);
+    related.appendChild(b);
+  });
+  root.appendChild(related);
+
+  const episodeTitle=document.createElement("h2");
+  episodeTitle.textContent="Episodes";
+  root.appendChild(episodeTitle);
+
+  const count=Number(a.episodes)||0;
+  if(count===0) {
+    const note=document.createElement("p");
+    note.className="small";
+    note.textContent="Episode count abhi available nahi hai.";
+    root.appendChild(note);
+  } else {
+    const list=document.createElement("div");
+    list.className="episode-list";
+    for(let i=1;i<=count;i++) {
+      const b=document.createElement("button");
+      b.className="episode-btn"+(i===selectedEpisode?" active":"");
+      b.textContent="EP "+i;
+      b.onclick=()=>{
+        selectedEpisode=i;
+        showDetails();
+      };
+      list.appendChild(b);
+    }
+    root.appendChild(list);
+  }
+
+  const playerTitle=document.createElement("h2");
+  playerTitle.textContent="Watch Episode "+selectedEpisode;
+  root.appendChild(playerTitle);
+
+  const videoId=officialVideos[a.id+"-"+selectedEpisode];
+  if(videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+    const frame=document.createElement("iframe");
+    frame.className="player";
+    frame.src="https://www.youtube.com/embed/"+videoId;
+    frame.title="Official anime episode";
+    frame.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    frame.allowFullscreen=true;
+    frame.referrerPolicy="strict-origin-when-cross-origin";
+    root.appendChild(frame);
+  } else {
+    const note=document.createElement("div");
+    note.className="notice";
+    note.textContent=
+      "Is episode ka official playable video abhi add nahi hua hai. Sirf permission wale official video ka ID add karne par player chalega.";
+    root.appendChild(note);
+  }
+
+  if(a.siteUrl) {
+    const link=document.createElement("a");
+    link.href=a.siteUrl;
+    link.target="_blank";
+    link.rel="noopener noreferrer";
+    link.textContent="View anime information on AniList";
+    link.style="display:block;color:#c084fc;margin-top:18px";
+    root.appendChild(link);
+  }
+}
+
+function home() {
+  document.getElementById("details").style.display="none";
+  document.getElementById("homePage").style.display="block";
   window.scrollTo(0,0);
 }
 
-renderAnime();
+loadAnime();
 </script>
 </body>
 </html>
