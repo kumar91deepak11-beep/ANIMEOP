@@ -172,3 +172,180 @@ render();
 </script>
 </body>
 </html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANIMEOP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#09090e;color:white;font-family:Arial,sans-serif}
+header{padding:17px;background:#15151d;border-bottom:1px solid #333;position:sticky;top:0;z-index:5}
+.logo{font-size:28px;font-weight:900;color:#b56aff}
+main{max-width:1100px;margin:auto;padding:16px}
+h2{font-size:21px}
+input{width:100%;padding:14px;border-radius:9px;background:#20202a;border:1px solid #444;color:white;margin:12px 0}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 0}
+button{background:#963be8;color:white;border:0;border-radius:8px;padding:11px;cursor:pointer;white-space:nowrap}
+.tab{background:#22222c}
+.tab.active{background:#963be8}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:15px}
+.card{background:#191923;border-radius:12px;overflow:hidden}
+.thumb{width:100%;aspect-ratio:3/4;object-fit:cover;background:#292936;display:block}
+.cardbody{padding:11px}
+.card h3{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.card p{font-size:12px;color:#bbb;overflow-wrap:anywhere}
+.play{width:100%}
+#status{color:#bbb;line-height:1.5}
+#playerBox{display:none;background:#191923;padding:14px;border-radius:12px;margin-top:22px}
+video{width:100%;background:black;border-radius:10px}
+a{color:#c99aff}
+.credit{font-size:13px;color:#ccc;line-height:1.7}
+.note{background:#25202f;padding:12px;border-radius:9px;color:#ddd;font-size:13px;line-height:1.6}
+footer{text-align:center;color:#777;padding:25px;font-size:12px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+
+<header><div class="logo">ANIMEOP</div></header>
+
+<main>
+<h2>Discover Anime Videos</h2>
+<p class="credit">Japanese anime • Free licensed media</p>
+
+<input id="search" placeholder="Search anime videos..."
+onkeydown="if(event.key==='Enter')loadVideos()">
+
+<div class="tabs">
+<button class="tab active" data-type="all" onclick="changeTab('all',this)">All Videos</button>
+<button class="tab" data-type="japanese" onclick="changeTab('japanese',this)">Japanese Anime</button>
+<button class="tab" data-type="trailers" onclick="changeTab('trailers',this)">Trailers</button>
+<button class="tab" data-type="full" onclick="changeTab('full',this)">Full Episodes</button>
+</div>
+
+<button onclick="loadVideos()">SEARCH VIDEOS</button>
+
+<p id="status">Loading videos...</p>
+<div class="grid" id="videos"></div>
+
+<div id="playerBox">
+<h2 id="playingTitle">Watch Video</h2>
+<video id="player" controls playsinline></video>
+<p class="credit" id="license"></p>
+<p class="credit" id="creator"></p>
+<p><a id="sourceLink" target="_blank" rel="noopener">Original video page</a></p>
+<p><a id="licenseLink" target="_blank" rel="noopener">License information</a></p>
+</div>
+
+<div class="note">
+Videos are displayed only as candidates. Check the original file page, license, creator and usage conditions before reusing. Full Episodes are shown only after manual verification.
+</div>
+</main>
+
+<footer>ANIMEOP • Free licensed media catalogue</footer>
+
+<script>
+const API="https://commons.wikimedia.org/w/api.php";
+const grid=document.getElementById("videos");
+const statusText=document.getElementById("status");
+
+let currentTab="all";
+let allVideos=[];
+
+// Add a file title here only after manually verifying
+// that it is a complete episode and its reuse rights.
+const VERIFIED_FULL_EPISODES = [];
+
+// These are trailer/promo title clues, not proof.
+// Review the original file before publishing.
+const trailerWords =
+ /trailer|promo|preview|teaser|pv\b|opening|ending/i;
+
+function clean(value){
+ const div=document.createElement("div");
+ div.innerHTML=value||"";
+ return div.textContent.trim();
+}
+
+function allowedLicense(name){
+ const s=(name||"").toLowerCase();
+ return s.includes("cc by-sa") ||
+        s.includes("cc by ") ||
+        s.includes("cc0") ||
+        s.includes("public domain");
+}
+
+function classify(item){
+ const title=item.title.replace(/^File:/,"");
+ if(VERIFIED_FULL_EPISODES.includes(title)){
+  return "full";
+ }
+ if(trailerWords.test(title)){
+  return "trailers";
+ }
+ return "japanese";
+}
+
+function changeTab(type,button){
+ currentTab=type;
+ document.querySelectorAll(".tab").forEach(b=>
+  b.classList.remove("active")
+ );
+ button.classList.add("active");
+ render();
+}
+
+async function loadVideos(){
+ grid.innerHTML="";
+ allVideos=[];
+ statusText.textContent="Searching videos...";
+
+ const keyword=document.getElementById("search").value.trim()||"anime";
+
+ const searchTerms = currentTab==="trailers"
+  ? keyword+" anime trailer promo"
+  : currentTab==="japanese"
+  ? keyword+" Japanese anime"
+  : keyword+" anime";
+
+ const params=new URLSearchParams({
+  action:"query",
+  generator:"search",
+  gsrsearch:"filetype:video "+searchTerms,
+  gsrnamespace:"6",
+  gsrlimit:"50",
+  prop:"imageinfo",
+  iiprop:"url|mime|extmetadata",
+  iiurlwidth:"400",
+  format:"json",
+  origin:"*"
+ });
+
+ try{
+  const response=await fetch(API+"?"+params);
+  if(!response.ok) throw new Error("API error");
+
+  const data=await response.json();
+  const pages=Object.values(data.query?.pages||{});
+
+  for(const item of pages){
+   const info=item.imageinfo?.[0];
+   if(!info || !info.url) continue;
+   if(!info.mime?.startsWith("video/")) continue;
+
+   const meta=info.extmetadata||{};
+   const license=clean(meta.LicenseShortName?.value);
+   const terms=clean(meta.UsageTerms?.value);
+
+   if(!allowedLicense(license+" "+terms)) continue;
+
+   const title=item.title.replace(/^File:/,"");
+   const category=classify(item);
+
+   // The Japanese tab is a discovery search,
+   // not proof that every result is Japanese anime.
+
