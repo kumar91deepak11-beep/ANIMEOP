@@ -1,1 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080808">
+<title>ANIMEOP</title>
 
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #080808;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111;
+}
+
+.logo {
+  color: orange;
+  font-size: 27px;
+  font-weight: bold;
+}
+
+nav {
+  display: flex;
+  gap: 18px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+nav button {
+  background: #222;
+  color: white;
+  border: none;
+  padding: 11px 17px;
+  border-radius: 20px;
+}
+
+.search {
+  padding: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #444;
+  background: #181818;
+  color: white;
+  font-size: 16px;
+}
+
+.hero {
+  margin: 15px;
+  padding: 35px 20px;
+  min-height: 230px;
+  border-radius: 18px;
+  background: linear-gradient(120deg,#32104c,#111,#9a3c12);
+}
+
+.hero h1 {
+  font-size: 30px;
+}
+
+.hero button {
+  background: orange;
+  color: black;
+  padding: 14px 25px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+h2 {
+  margin: 20px 15px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 14px;
+  padding: 15px;
+}
+
+.card {
+  background: #181818;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.poster {
+  height: 155px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 45px;
+  background: linear-gradient(140deg,#42105e,#e66b21);
+}
+
+.card h3 {
+  font-size: 15px;
+  padding: 0 10px;
+}
+
+.card p {
+  color: #aaa;
+  padding: 0 10px 10px;
+  font-size: 12px;
+}
+
+.card button {
+  margin: 0 10px 12px;
+  background: #ff9d32;
+  border: none;
+  padding: 9px 15px;
+  border-radius: 8px;
+}
+
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #888;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">ANIMEOP</div>
+  <div>☰</div>
+</header>
+
+<nav>
+  <button onclick="filterAnime('All')">All</button>
+  <button onclick="filterAnime('Action')">Action</button>
+  <button onclick="filterAnime('Romance')">Romance</button>
+  <button onclick="filterAnime('Fantasy')">Fantasy</button>
+  <button onclick="filterAnime('Comedy')">Comedy</button>
+</nav>
+
+<div class="search">
+  <input
+    id="search"
+    placeholder="🔍 Search Anime..."
+    oninput="renderAnime()">
+</div>
+
+<section class="hero">
+  <h4>ANIMEOP ORIGINAL</h4>
+  <h1>Discover Your Anime World</h1>
+  <p>Explore amazing anime adventures.</p>
+  <button onclick="filterAnime('All')">Explore Anime</button>
+</section>
+
+<h2>🔥 Trending Anime</h2>
+
+<div class="grid" id="animeList"></div>
+
+<footer>
+  ANIMEOP © 2026
+  <p>Your Anime Universe</p>
+</footer>
+
+<script>
+
+const anime = [
+  {name:"Chrono Blade",genre:"Action",icon:"⚔️"},
+  {name:"Starlight Sonata",genre:"Romance",icon:"🌸"},
+  {name:"Shadow Kingdom",genre:"Fantasy",icon:"🐉"},
+  {name:"Funny Heroes",genre:"Comedy",icon:"😂"},
+  {name:"Neo Shinjuku",genre:"Action",icon:"🌃"},
+  {name:"Magic World",genre:"Fantasy",icon:"✨"},
+  {name:"Moonlight Love",genre:"Romance",icon:"🌙"},
+  {name:"Cyber Warrior",genre:"Action",icon:"🤖"}
+];
+
+let selectedGenre = "All";
+
+function renderAnime() {
+  const search = document
+    .getElementById("search")
+    .value.toLowerCase();
+
+  const list = document.getElementById("animeList");
+
+  const filtered = anime.filter(item =>
+    (selectedGenre === "All" ||
+     item.genre === selectedGenre) &&
+    item.name.toLowerCase().includes(search)
+  );
+
+  list.innerHTML = filtered.map(item => `
+    <div class="card">
+      <div class="poster">${item.icon}</div>
+      <h3>${item.name}</h3>
+      <p>${item.genre}</p>
+      <button onclick="showDetails('${item.name}')">
+        Details
+      </button>
+    </div>
+  `).join("");
+}
+
+function filterAnime(genre) {
+  selectedGenre = genre;
+  renderAnime();
+}
+
+function showDetails(name) {
+  alert(name + "\\nSample anime details coming soon!");
+}
+
+renderAnime();
+
+</script>
+
+</body>
+</html>
