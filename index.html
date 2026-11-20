@@ -7,116 +7,82 @@
 <title>ANIMEOP</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#09090e;color:white;font-family:Arial,sans-serif}
-header{padding:17px;background:#15151d;border-bottom:1px solid #333;position:sticky;top:0;z-index:5}
-.logo{font-size:28px;font-weight:900;color:#b56aff}
-main{max-width:1100px;margin:auto;padding:16px}
-h2{font-size:21px}
-input{width:100%;padding:14px;border-radius:9px;background:#20202a;border:1px solid #444;color:white;margin:12px 0}
+body{margin:0;background:#090910;color:white;font-family:Arial}
+header{padding:20px;background:#15151f;border-bottom:1px solid #333}
+.logo{font-size:30px;font-weight:bold;color:#b56aff}
+main{padding:16px;max-width:900px;margin:auto}
+input{width:100%;padding:14px;background:#20202a;color:white;border:1px solid #444;border-radius:9px;margin:12px 0}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 0}
-button{background:#963be8;color:white;border:0;border-radius:8px;padding:11px;cursor:pointer;white-space:nowrap}
-.tab{background:#22222c}
+button{background:#963be8;color:white;border:0;border-radius:8px;padding:12px}
+.tab{background:#252530}
 .tab.active{background:#963be8}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
 .card{background:#191923;border-radius:12px;overflow:hidden}
-.thumb{width:100%;aspect-ratio:3/4;object-fit:cover;background:#292936;display:block}
-.cardbody{padding:11px}
-.card h3{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
-.card p{font-size:12px;color:#bbb;overflow-wrap:anywhere}
+.thumb{width:100%;aspect-ratio:16/9;object-fit:cover}
+.info{padding:12px}
+.info h3{font-size:15px}
+.info p{font-size:12px;color:#bbb;line-height:1.5}
 .play{width:100%}
-#status{color:#bbb;line-height:1.5}
-#playerBox{display:none;background:#191923;padding:14px;border-radius:12px;margin-top:22px}
-video{width:100%;background:black;border-radius:10px}
+#watch{display:none;margin-top:25px;background:#191923;padding:14px;border-radius:12px}
+iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:10px}
 a{color:#c99aff}
-.credit{font-size:13px;color:#ccc;line-height:1.7}
-.note{background:#25202f;padding:12px;border-radius:9px;color:#ddd;font-size:13px;line-height:1.6}
-footer{text-align:center;color:#777;padding:25px;font-size:12px}
-@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.note{color:#bbb;font-size:13px;line-height:1.6}
+@media(max-width:420px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<header><div class="logo">ANIMEOP</div></header>
+<header>
+<div class="logo">ANIMEOP</div>
+</header>
 
 <main>
-<h2>Discover Anime Videos</h2>
-<p class="credit">Japanese anime • Free licensed media</p>
-
-<input id="search" placeholder="Search anime videos..."
-onkeydown="if(event.key==='Enter')loadVideos()">
+<h2>Discover Anime</h2>
+<input id="search" placeholder="Search anime..."
+oninput="render()">
 
 <div class="tabs">
-<button class="tab active" data-type="all" onclick="changeTab('all',this)">All Videos</button>
-<button class="tab" data-type="japanese" onclick="changeTab('japanese',this)">Japanese Anime</button>
-<button class="tab" data-type="trailers" onclick="changeTab('trailers',this)">Trailers</button>
-<button class="tab" data-type="full" onclick="changeTab('full',this)">Full Episodes</button>
+<button class="tab active" onclick="change('all',this)">All</button>
+<button class="tab" onclick="change('full',this)">Full Episodes</button>
+<button class="tab" onclick="change('trailers',this)">Trailers</button>
+<button class="tab" onclick="change('japanese',this)">Japanese Anime</button>
 </div>
 
-<button onclick="loadVideos()">SEARCH VIDEOS</button>
+<div id="status" class="note"></div>
+<div class="grid" id="catalogue"></div>
 
-<p id="status">Loading videos...</p>
-<div class="grid" id="videos"></div>
-
-<div id="playerBox">
-<h2 id="playingTitle">Watch Video</h2>
-<video id="player" controls playsinline></video>
-<p class="credit" id="license"></p>
-<p class="credit" id="creator"></p>
-<p><a id="sourceLink" target="_blank" rel="noopener">Original video page</a></p>
-<p><a id="licenseLink" target="_blank" rel="noopener">License information</a></p>
+<div id="watch">
+<h2 id="watchTitle">Watch Anime</h2>
+<div id="video"></div>
+<p id="credit" class="note"></p>
+<p><a id="original" target="_blank" rel="noopener">Official original video</a></p>
+<p><a id="license" target="_blank" rel="noopener">License details</a></p>
 </div>
 
-<div class="note">
-Videos are displayed only as candidates. Check the original file page, license, creator and usage conditions before reusing. Full Episodes are shown only after manual verification.
-</div>
+<p class="note">
+ANIMEOP displays officially hosted videos. Reuse or redistribution
+requires checking the original license and giving required credit.
+</p>
 </main>
 
-<footer>ANIMEOP • Free licensed media catalogue</footer>
-
 <script>
-const API="https://commons.wikimedia.org/w/api.php";
-const grid=document.getElementById("videos");
-const statusText=document.getElementById("status");
-
-let currentTab="all";
-let allVideos=[];
-
-// Add a file title here only after manually verifying
-// that it is a complete episode and its reuse rights.
-const VERIFIED_FULL_EPISODES = [];
-
-// These are trailer/promo title clues, not proof.
-// Review the original file before publishing.
-const trailerWords =
- /trailer|promo|preview|teaser|pv\b|opening|ending/i;
-
-function clean(value){
- const div=document.createElement("div");
- div.innerHTML=value||"";
- return div.textContent.trim();
-}
-
-function allowedLicense(name){
- const s=(name||"").toLowerCase();
- return s.includes("cc by-sa") ||
-        s.includes("cc by ") ||
-        s.includes("cc0") ||
-        s.includes("public domain");
-}
-
-function classify(item){
- const title=item.title.replace(/^File:/,"");
- if(VERIFIED_FULL_EPISODES.includes(title)){
-  return "full";
+const episodes = [
+{
+ title:"Morevna Episode 3.0.2 (English)",
+ category:"full",
+ thumbnail:"https://i.ytimg.com/vi/ecVv2IB7f5k/hqdefault.jpg",
+ youtube:"ecVv2IB7f5k",
+ creator:"Morevna Project",
+ license:"Creative Commons Attribution-ShareAlike 4.0 (as stated in the video description)",
+ original:"https://www.youtube.com/watch?v=ecVv2IB7f5k",
+ licenseURL:"https://creativecommons.org/licenses/by-sa/4.0/"
  }
- if(trailerWords.test(title)){
-  return "trailers";
- }
- return "japanese";
-}
+];
 
-function changeTab(type,button){
- currentTab=type;
+let selected="all";
+
+function change(type,button){
+ selected=type;
  document.querySelectorAll(".tab").forEach(b=>
   b.classList.remove("active")
  );
@@ -124,160 +90,85 @@ function changeTab(type,button){
  render();
 }
 
-async function loadVideos(){
- grid.innerHTML="";
- allVideos=[];
- statusText.textContent="Searching videos...";
-
- const keyword=document.getElementById("search").value.trim()||"anime";
-
- const searchTerms = currentTab==="trailers"
-  ? keyword+" anime trailer promo"
-  : currentTab==="japanese"
-  ? keyword+" Japanese anime"
-  : keyword+" anime";
-
- const params=new URLSearchParams({
-  action:"query",
-  generator:"search",
-  gsrsearch:"filetype:video "+searchTerms,
-  gsrnamespace:"6",
-  gsrlimit:"50",
-  prop:"imageinfo",
-  iiprop:"url|mime|extmetadata",
-  iiurlwidth:"400",
-  format:"json",
-  origin:"*"
- });
-
- try{
-  const response=await fetch(API+"?"+params);
-  if(!response.ok) throw new Error("API error");
-
-  const data=await response.json();
-  const pages=Object.values(data.query?.pages||{});
-
-  for(const item of pages){
-   const info=item.imageinfo?.[0];
-   if(!info || !info.url) continue;
-   if(!info.mime?.startsWith("video/")) continue;
-
-   const meta=info.extmetadata||{};
-   const license=clean(meta.LicenseShortName?.value);
-   const terms=clean(meta.UsageTerms?.value);
-
-   if(!allowedLicense(license+" "+terms)) continue;
-
-   const title=item.title.replace(/^File:/,"");
-   const category=classify(item);
-
-   // The Japanese tab is a discovery search,
-   // not proof that every result is Japanese anime.
-   allVideos.push({
-    title,
-    url:info.url,
-    thumbnail:info.thumburl||"",
-    license,
-    licenseURL:meta.LicenseUrl?.value||"",
-    creator:clean(meta.Artist?.value||"Creator not listed"),
-    source:info.descriptionurl||"",
-    category
-   });
-  }
-
-  render();
-
- }catch(error){
-  console.error(error);
-  statusText.textContent="Search failed. Check internet and try again.";
- }
-}
-
 function render(){
+ const grid=document.getElementById("catalogue");
+ const query=document.getElementById("search").value.toLowerCase();
+
  grid.innerHTML="";
 
- const results=allVideos.filter(v=>{
-  if(currentTab==="trailers") return v.category==="trailers";
-  if(currentTab==="full") return v.category==="full";
-  if(currentTab==="japanese") return v.category==="japanese";
-  return true;
+ const results=episodes.filter(item=>{
+  const matches=item.title.toLowerCase().includes(query);
+  const category=selected==="all" ||
+    (selected==="full" && item.category==="full") ||
+    (selected==="trailers" && item.category==="trailers") ||
+    (selected==="japanese" && item.category==="japanese");
+  return matches && category;
  });
 
- statusText.textContent=results.length+
-  " matching results. Verify each original license.";
+ document.getElementById("status").textContent=
+  results.length+" verified catalogue item(s)";
 
- if(currentTab==="full" && !results.length){
-  statusText.textContent=
-   "No manually verified full episodes added yet. No trailer is shown as a full episode.";
+ if(selected==="trailers" || selected==="japanese"){
+  document.getElementById("status").textContent=
+   "No verified items added in this category yet.";
  }
 
- results.forEach(v=>{
-  const card=document.createElement("article");
+ if(selected==="full" && results.length===0){
+  document.getElementById("status").textContent=
+   "No verified full episodes available yet.";
+ }
+
+ results.forEach(item=>{
+  const card=document.createElement("div");
   card.className="card";
 
   const img=document.createElement("img");
   img.className="thumb";
-  img.alt=v.title;
-  img.loading="lazy";
+  img.src=item.thumbnail;
+  img.alt=item.title;
 
-  if(v.thumbnail){
-   img.src=v.thumbnail;
-  }else{
-   img.alt="Thumbnail unavailable";
-  }
-
-  const body=document.createElement("div");
-  body.className="cardbody";
+  const info=document.createElement("div");
+  info.className="info";
 
   const title=document.createElement("h3");
-  title.textContent=v.title;
-
-  const category=document.createElement("p");
-  category.textContent=v.category==="full"
-   ?"Verified Full Episode"
-   :v.category==="trailers"
-   ?"Trailer / Promotional candidate"
-   :"Japanese Anime search candidate";
-
-  const lic=document.createElement("p");
-  lic.textContent="License: "+v.license;
+  title.textContent=item.title;
 
   const creator=document.createElement("p");
-  creator.textContent="Creator: "+v.creator;
+  creator.textContent="Creator: "+item.creator;
 
-  const play=document.createElement("button");
-  play.className="play";
-  play.textContent="WATCH VIDEO";
-  play.onclick=()=>playVideo(v);
+  const license=document.createElement("p");
+  license.textContent="License: "+item.license;
 
-  body.append(title,category,lic,creator,play);
-  card.append(img,body);
-  grid.appendChild(card);
+  const btn=document.createElement("button");
+  btn.className="play";
+  btn.textContent="WATCH EPISODE";
+  btn.onclick=()=>watch(item);
+
+  info.append(title,creator,license,btn);
+  card.append(img,info);
+  grid.append(card);
  });
 }
 
-function playVideo(v){
- const box=document.getElementById("playerBox");
- const player=document.getElementById("player");
+function watch(item){
+ document.getElementById("watchTitle").textContent=item.title;
 
- player.pause();
- player.removeAttribute("src");
- player.load();
+ document.getElementById("video").innerHTML=
+  '<iframe src="https://www.youtube-nocookie.com/embed/'+
+  item.youtube+
+  '" title="Official Morevna video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
 
- document.getElementById("playingTitle").textContent=v.title;
- document.getElementById("license").textContent="License: "+v.license;
- document.getElementById("creator").textContent="Creator: "+v.creator;
+ document.getElementById("credit").textContent=
+  "Creator: "+item.creator+" | "+item.license;
 
- document.getElementById("sourceLink").href=v.source;
- document.getElementById("licenseLink").href=v.licenseURL||v.source;
+ document.getElementById("original").href=item.original;
+ document.getElementById("license").href=item.licenseURL;
 
- player.src=v.url;
- box.style.display="block";
- box.scrollIntoView({behavior:"smooth"});
- player.play().catch(()=>{});
+ document.getElementById("watch").style.display="block";
+ document.getElementById("watch").scrollIntoView({behavior:"smooth"});
 }
 
-loadVideos();
+render();
 </script>
 </body>
 </html>
