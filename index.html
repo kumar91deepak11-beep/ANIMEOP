@@ -1,37 +1,396 @@
-<div id="anime-list">Loading Anime...</div>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANIMEOP</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#080910;
+ color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ background:#11121d;
+ padding:20px;
+ position:sticky;
+ top:0;
+ z-index:5;
+ border-bottom:1px solid #292b40;
+}
+.logo{
+ font-size:30px;
+ font-weight:900;
+ color:#a855f7;
+ letter-spacing:3px;
+}
+.logo span{color:#00e5ff}
+.search{
+ width:100%;
+ padding:14px;
+ margin-top:15px;
+ border:1px solid #383850;
+ border-radius:12px;
+ background:#202132;
+ color:white;
+ outline:none;
+ font-size:16px;
+}
+nav{
+ display:flex;
+ gap:10px;
+ overflow-x:auto;
+ padding:15px 0 5px;
+}
+nav button{
+ white-space:nowrap;
+ border:0;
+ padding:11px 17px;
+ border-radius:20px;
+ background:#25263a;
+ color:white;
+}
+nav button.active{
+ background:#a855f7;
+}
+.hero{
+ margin:18px;
+ padding:30px 20px;
+ border-radius:18px;
+ background:linear-gradient(120deg,#35105d,#071e37,#11121d);
+}
+.hero h1{font-size:34px;margin:0 0 10px}
+.hero p{color:#d0c6e9;line-height:1.5}
+h2{margin:20px 16px;color:#00e5ff}
+#status{
+ margin:15px;
+ color:#aaa;
+}
+#animeList{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:13px;
+ padding:12px;
+}
+.card{
+ background:#141522;
+ border:1px solid #292a3e;
+ border-radius:13px;
+ overflow:hidden;
+ cursor:pointer;
+}
+.card img{
+ width:100%;
+ aspect-ratio:3/4;
+ object-fit:cover;
+ display:block;
+}
+.info{padding:10px}
+.info h3{
+ font-size:14px;
+ line-height:1.4;
+ margin:0 0 8px;
+}
+.info p{
+ font-size:12px;
+ color:#aaa;
+ margin:5px 0;
+}
+.tag{
+ color:#00e5ff;
+ font-size:11px;
+}
+#more{
+ display:block;
+ margin:20px auto;
+ padding:13px 30px;
+ border:0;
+ border-radius:25px;
+ color:white;
+ background:#8b35df;
+ font-weight:bold;
+}
+#more:disabled{opacity:.5}
+#modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ z-index:10;
+ background:#000d;
+ overflow:auto;
+ padding:20px;
+}
+.modalbox{
+ max-width:450px;
+ margin:25px auto;
+ background:#171827;
+ border:1px solid #45405e;
+ border-radius:17px;
+ padding:18px;
+}
+.modalbox img{
+ width:130px;
+ border-radius:10px;
+}
+.modalbox h2{margin:15px 0}
+.modalbox p{line-height:1.6;color:#ccc}
+.close{
+ float:right;
+ background:#a855f7;
+ color:white;
+ border:0;
+ padding:10px 15px;
+ border-radius:9px;
+}
+.link{
+ display:inline-block;
+ background:#a855f7;
+ color:white;
+ text-decoration:none;
+ padding:12px 18px;
+ border-radius:10px;
+}
+footer{
+ text-align:center;
+ padding:30px 15px;
+ color:#888;
+ border-top:1px solid #25263a;
+ margin-top:30px;
+ font-size:12px;
+}
+@media(min-width:650px){
+ #animeList{grid-template-columns:repeat(4,1fr)}
+}
+@media(min-width:1000px){
+ #animeList{grid-template-columns:repeat(6,1fr)}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="logo">ANIME<span>OP</span></div>
+ <input id="search" class="search"
+ placeholder="Search Anime..."
+ autocomplete="off">
+
+ <nav>
+  <button class="active" data-sort="TRENDING_DESC">Trending</button>
+  <button data-sort="POPULARITY_DESC">Popular</button>
+  <button data-sort="SCORE_DESC">Top Rated</button>
+  <button data-sort="START_DATE_DESC">Latest</button>
+ </nav>
+</header>
+
+<section class="hero">
+ <h1>WELCOME TO ANIMEOP</h1>
+ <p>Discover Trending Anime, New Releases,
+ Classics and Your Favourite Anime.</p>
+</section>
+
+<h2 id="heading">Trending Anime</h2>
+
+<div id="status">Loading Anime...</div>
+<div id="animeList"></div>
+
+<button id="more">LOAD MORE</button>
+
+<div id="modal">
+ <div class="modalbox">
+  <button class="close" id="close">CLOSE ✕</button>
+  <div id="details"></div>
+ </div>
+</div>
+
+<footer>
+ Copyright © 2026 ANIMEOP<br><br>
+ Anime information provided by AniList.
+ All anime rights belong to their respective owners.
+ Video content is not hosted by ANIMEOP.
+</footer>
 
 <script>
-fetch("https://graphql.anilist.co", {
- method: "POST",
- headers: {"Content-Type":"application/json"},
- body: JSON.stringify({
-  query: `{
-   Page(perPage:20) {
-    media(type:ANIME, sort:POPULARITY_DESC) {
-     id
-     title { romaji }
-     coverImage { large }
-     episodes
-     seasonYear
+const API="https://graphql.anilist.co";
+
+const list=document.getElementById("animeList");
+const statusBox=document.getElementById("status");
+const heading=document.getElementById("heading");
+const search=document.getElementById("search");
+const more=document.getElementById("more");
+
+let currentSort="TRENDING_DESC";
+let currentSearch="";
+let page=1;
+let loading=false;
+
+const query=`
+query ($page:Int,$sort:[MediaSort],$search:String) {
+ Page(page:$page,perPage:24) {
+  pageInfo { hasNextPage }
+  media(
+   type:ANIME,
+   sort:$sort,
+   search:$search
+  ) {
+   id
+   title { romaji english }
+   coverImage { large }
+   episodes
+   season
+   seasonYear
+   startDate { year }
+   format
+   genres
+   description(asHtml:false)
+   averageScore
+   siteUrl
+  }
+ }
+}`;
+
+function escapeHTML(s=""){
+ return String(s).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+async function loadAnime(reset=false){
+ if(loading)return;
+ loading=true;
+ more.disabled=true;
+
+ if(reset){
+  page=1;
+  list.innerHTML="";
+ }
+
+ statusBox.textContent="Loading Anime...";
+
+ try{
+  const response=await fetch(API,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    query,
+    variables:{
+     page,
+     sort:[currentSort],
+     search:currentSearch||null
     }
-   }
-  }`
- })
-})
-.then(r => r.json())
-.then(data => {
- document.getElementById("anime-list").innerHTML =
- data.data.Page.media.map(a => `
- <div style="display:inline-block;width:150px;margin:10px">
- <img src="${a.coverImage.large}" width="150">
- <h3>${a.title.romaji}</h3>
- <p>Episodes: ${a.episodes || "Unknown"}</p>
- <p>${a.seasonYear || ""}</p>
- </div>
- `).join("");
-})
-.catch(() => {
- document.getElementById("anime-list").innerText =
- "Anime loading failed.";
+   })
+  });
+
+  if(!response.ok)throw Error("API error");
+
+  const result=await response.json();
+  if(result.errors)throw Error("API error");
+
+  const data=result.data.Page;
+
+  if(reset && data.media.length===0){
+   statusBox.textContent="No Anime Found.";
+  }else{
+   statusBox.textContent="";
+  }
+
+  data.media.forEach(a=>{
+   const title=a.title.english||a.title.romaji||"Unknown";
+   const card=document.createElement("div");
+   card.className="card";
+
+   card.innerHTML=`
+    <img loading="lazy"
+    src="${escapeHTML(a.coverImage.large)}"
+    alt="${escapeHTML(title)}">
+    <div class="info">
+     <h3>${escapeHTML(title)}</h3>
+     <p>Episodes: ${a.episodes??"Unknown"}</p>
+     <p>${a.seasonYear??"Year unknown"}</p>
+     <span class="tag">${escapeHTML(a.format||"ANIME")}</span>
+    </div>`;
+
+   card.addEventListener("click",()=>showDetails(a));
+   list.appendChild(card);
+  });
+
+  more.style.display=data.pageInfo.hasNextPage?"block":"none";
+  page++;
+
+ }catch(error){
+  statusBox.textContent="Anime loading failed. Please try again.";
+  more.style.display="block";
+ }finally{
+  loading=false;
+  more.disabled=false;
+ }
+}
+
+function showDetails(a){
+ const title=a.title.english||a.title.romaji||"Anime";
+
+ document.getElementById("details").innerHTML=`
+  <img src="${escapeHTML(a.coverImage.large)}">
+  <h2>${escapeHTML(title)}</h2>
+  <p>Episodes: ${a.episodes??"Unknown"}</p>
+  <p>Season: ${escapeHTML(a.season||"Unknown")}</p>
+  <p>Year: ${a.seasonYear??"Unknown"}</p>
+  <p>Rating: ${a.averageScore??"Not rated"}/100</p>
+  <p>Genres: ${escapeHTML((a.genres||[]).join(", "))}</p>
+  <p>${escapeHTML(a.description||"Description unavailable.")}</p>
+  <a class="link" target="_blank"
+  rel="noopener noreferrer"
+  href="${escapeHTML(a.siteUrl)}">Anime Details</a>
+ `;
+
+ document.getElementById("modal").style.display="block";
+}
+
+document.getElementById("close").onclick=()=>{
+ document.getElementById("modal").style.display="none";
+};
+
+document.getElementById("modal").onclick=e=>{
+ if(e.target.id==="modal"){
+  e.currentTarget.style.display="none";
+ }
+};
+
+document.querySelectorAll("nav button").forEach(btn=>{
+ btn.onclick=()=>{
+  document.querySelectorAll("nav button")
+  .forEach(b=>b.classList.remove("active"));
+
+  btn.classList.add("active");
+  currentSort=btn.dataset.sort;
+  currentSearch="";
+  search.value="";
+  heading.textContent=btn.textContent+" Anime";
+  loadAnime(true);
+ };
 });
+
+let timer;
+
+search.addEventListener("input",()=>{
+ clearTimeout(timer);
+ timer=setTimeout(()=>{
+  currentSearch=search.value.trim();
+  heading.textContent=currentSearch?
+  "Search Results":"Trending Anime";
+  loadAnime(true);
+ },500);
+});
+
+more.onclick=()=>loadAnime();
+
+loadAnime(true);
 </script>
+
+</body>
+</html>
