@@ -3,164 +3,93 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ANIMEOP</title>
 
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;
- background:#080910;
- color:white;
- font-family:Arial,sans-serif;
+ margin:0;background:#080910;color:white;
+ font-family:Arial,sans-serif
 }
 header{
- background:#11121d;
- padding:20px;
- position:sticky;
- top:0;
- z-index:5;
- border-bottom:1px solid #292b40;
+ background:#121321;padding:20px;
+ position:sticky;top:0;z-index:5;
+ border-bottom:1px solid #292a40
 }
-.logo{
- font-size:30px;
- font-weight:900;
- color:#a855f7;
- letter-spacing:3px;
-}
+.logo{font-size:30px;font-weight:bold;color:#ad55ff}
 .logo span{color:#00e5ff}
-.search{
- width:100%;
- padding:14px;
- margin-top:15px;
- border:1px solid #383850;
- border-radius:12px;
- background:#202132;
- color:white;
- outline:none;
- font-size:16px;
+input,select{
+ width:100%;padding:14px;margin-top:12px;
+ background:#242538;color:white;
+ border:1px solid #49405f;border-radius:10px
 }
-nav{
- display:flex;
- gap:10px;
- overflow-x:auto;
- padding:15px 0 5px;
-}
+nav{display:flex;gap:9px;overflow-x:auto;margin-top:15px}
 nav button{
- white-space:nowrap;
- border:0;
- padding:11px 17px;
- border-radius:20px;
- background:#25263a;
- color:white;
+ padding:12px 18px;border:0;border-radius:22px;
+ background:#25263a;color:white;white-space:nowrap
 }
-nav button.active{
- background:#a855f7;
-}
+nav button.active{background:#a444ed}
 .hero{
- margin:18px;
- padding:30px 20px;
+ margin:18px;padding:30px 20px;
  border-radius:18px;
- background:linear-gradient(120deg,#35105d,#071e37,#11121d);
+ background:linear-gradient(120deg,#471477,#071d36)
 }
-.hero h1{font-size:34px;margin:0 0 10px}
-.hero p{color:#d0c6e9;line-height:1.5}
-h2{margin:20px 16px;color:#00e5ff}
-#status{
- margin:15px;
- color:#aaa;
-}
+.hero h1{font-size:32px}
+h2{color:#00e5ff;margin:20px 14px}
+#status{padding:12px;color:#aaa}
 #animeList{
- display:grid;
- grid-template-columns:repeat(2,minmax(0,1fr));
- gap:13px;
- padding:12px;
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;padding:12px
 }
 .card{
- background:#141522;
- border:1px solid #292a3e;
- border-radius:13px;
- overflow:hidden;
- cursor:pointer;
+ background:#171827;border-radius:12px;
+ overflow:hidden;border:1px solid #303047
 }
 .card img{
- width:100%;
- aspect-ratio:3/4;
- object-fit:cover;
- display:block;
+ width:100%;aspect-ratio:3/4;object-fit:cover
 }
 .info{padding:10px}
-.info h3{
- font-size:14px;
- line-height:1.4;
- margin:0 0 8px;
+.info h3{font-size:14px}
+.info p{font-size:12px;color:#aaa}
+.tag{color:#00e5ff;font-size:11px}
+button,.watch{
+ cursor:pointer
 }
-.info p{
- font-size:12px;
- color:#aaa;
- margin:5px 0;
+.action{
+ display:block;margin:15px auto;padding:13px 25px;
+ border:0;border-radius:25px;background:#a444ed;
+ color:white;font-weight:bold
 }
-.tag{
- color:#00e5ff;
- font-size:11px;
+.watchbox{
+ margin:15px;padding:17px;
+ background:#171827;border:1px solid #493263;
+ border-radius:15px
 }
-#more{
- display:block;
- margin:20px auto;
- padding:13px 30px;
- border:0;
- border-radius:25px;
- color:white;
- background:#8b35df;
- font-weight:bold;
+.watch{
+ display:block;text-align:center;
+ padding:15px;background:#913be0;
+ color:white;text-decoration:none;
+ border-radius:10px;margin-top:12px
 }
-#more:disabled{opacity:.5}
+.note{color:#aaa;font-size:13px;line-height:1.6}
 #modal{
- display:none;
- position:fixed;
- inset:0;
- z-index:10;
- background:#000d;
- overflow:auto;
- padding:20px;
+ display:none;position:fixed;inset:0;
+ background:#000e;z-index:10;
+ overflow:auto;padding:20px
 }
 .modalbox{
- max-width:450px;
- margin:25px auto;
- background:#171827;
- border:1px solid #45405e;
- border-radius:17px;
- padding:18px;
+ background:#171827;padding:18px;
+ border-radius:15px;max-width:450px;margin:20px auto
 }
-.modalbox img{
- width:130px;
- border-radius:10px;
-}
-.modalbox h2{margin:15px 0}
-.modalbox p{line-height:1.6;color:#ccc}
+.modalbox img{width:130px;border-radius:10px}
 .close{
- float:right;
- background:#a855f7;
- color:white;
- border:0;
- padding:10px 15px;
- border-radius:9px;
-}
-.link{
- display:inline-block;
- background:#a855f7;
- color:white;
- text-decoration:none;
- padding:12px 18px;
- border-radius:10px;
+ float:right;background:#a444ed;
+ color:white;border:0;padding:10px;border-radius:8px
 }
 footer{
- text-align:center;
- padding:30px 15px;
- color:#888;
- border-top:1px solid #25263a;
- margin-top:30px;
- font-size:12px;
+ text-align:center;padding:30px;
+ color:#888;font-size:12px
 }
 @media(min-width:650px){
  #animeList{grid-template-columns:repeat(4,1fr)}
@@ -175,9 +104,8 @@ footer{
 
 <header>
  <div class="logo">ANIME<span>OP</span></div>
- <input id="search" class="search"
- placeholder="Search Anime..."
- autocomplete="off">
+
+ <input id="search" placeholder="Search Anime...">
 
  <nav>
   <button class="active" data-sort="TRENDING_DESC">Trending</button>
@@ -189,16 +117,43 @@ footer{
 
 <section class="hero">
  <h1>WELCOME TO ANIMEOP</h1>
- <p>Discover Trending Anime, New Releases,
- Classics and Your Favourite Anime.</p>
+ <p>Discover New Anime, Old Anime and Your Favourite Shows.</p>
 </section>
 
-<h2 id="heading">Trending Anime</h2>
+<section class="watchbox">
+ <h2>SOLO LEVELING</h2>
+ <p>Hindi Dub • Official Watch</p>
 
+ <select id="season">
+  <option value="1">Season 1</option>
+  <option value="2">Season 2</option>
+ </select>
+
+ <p class="note" id="seasonText">
+ Season 1 Hindi Dub availability depends on your region and subscription.
+ </p>
+
+ <a class="watch"
+ href="https://www.crunchyroll.com/series/GDKHZEJ0K/solo-leveling"
+ target="_blank" rel="noopener noreferrer">
+ WATCH OFFICIAL EPISODES
+ </a>
+
+ <a class="watch"
+ href="https://www.youtube.com/results?search_query=Crunchyroll+India+Solo+Leveling+Hindi+Dub"
+ target="_blank" rel="noopener noreferrer">
+ FIND OFFICIAL YOUTUBE VIDEOS
+ </a>
+
+ <p class="note">
+ Only watch videos published or authorized by their rights holders.
+ </p>
+</section>
+
+<h2 id="heading">TRENDING ANIME</h2>
 <div id="status">Loading Anime...</div>
 <div id="animeList"></div>
-
-<button id="more">LOAD MORE</button>
+<button class="action" id="more">LOAD MORE</button>
 
 <div id="modal">
  <div class="modalbox">
@@ -210,41 +165,24 @@ footer{
 <footer>
  Copyright © 2026 ANIMEOP<br><br>
  Anime information provided by AniList.
- All anime rights belong to their respective owners.
- Video content is not hosted by ANIMEOP.
+ All trademarks and copyrights belong to their owners.
+ ANIMEOP does not host unauthorized video files.
 </footer>
 
 <script>
 const API="https://graphql.anilist.co";
 
-const list=document.getElementById("animeList");
-const statusBox=document.getElementById("status");
-const heading=document.getElementById("heading");
-const search=document.getElementById("search");
-const more=document.getElementById("more");
-
-let currentSort="TRENDING_DESC";
-let currentSearch="";
-let page=1;
-let loading=false;
-
 const query=`
-query ($page:Int,$sort:[MediaSort],$search:String) {
- Page(page:$page,perPage:24) {
-  pageInfo { hasNextPage }
-  media(
-   type:ANIME,
-   sort:$sort,
-   search:$search
-  ) {
+query($page:Int,$sort:[MediaSort],$search:String){
+ Page(page:$page,perPage:24){
+  pageInfo{hasNextPage}
+  media(type:ANIME,sort:$sort,search:$search){
    id
-   title { romaji english }
-   coverImage { large }
+   title{romaji english}
+   coverImage{large}
    episodes
    season
    seasonYear
-   startDate { year }
-   format
    genres
    description(asHtml:false)
    averageScore
@@ -253,24 +191,32 @@ query ($page:Int,$sort:[MediaSort],$search:String) {
  }
 }`;
 
-function escapeHTML(s=""){
- return String(s).replace(/[&<>"']/g,c=>({
+let page=1;
+let sort="TRENDING_DESC";
+let searchText="";
+let busy=false;
+
+const list=document.getElementById("animeList");
+const status=document.getElementById("status");
+const more=document.getElementById("more");
+
+function safe(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({
  "&":"&amp;","<":"&lt;",">":"&gt;",
  '"':"&quot;","'":"&#39;"
  }[c]));
 }
 
-async function loadAnime(reset=false){
- if(loading)return;
- loading=true;
+async function load(reset=false){
+ if(busy)return;
+ busy=true;
  more.disabled=true;
 
  if(reset){
   page=1;
   list.innerHTML="";
  }
-
- statusBox.textContent="Loading Anime...";
+ status.textContent="Loading Anime...";
 
  try{
   const response=await fetch(API,{
@@ -279,9 +225,8 @@ async function loadAnime(reset=false){
    body:JSON.stringify({
     query,
     variables:{
-     page,
-     sort:[currentSort],
-     search:currentSearch||null
+     page,sort:[sort],
+     search:searchText||null
     }
    })
   });
@@ -293,59 +238,54 @@ async function loadAnime(reset=false){
 
   const data=result.data.Page;
 
-  if(reset && data.media.length===0){
-   statusBox.textContent="No Anime Found.";
-  }else{
-   statusBox.textContent="";
-  }
-
   data.media.forEach(a=>{
-   const title=a.title.english||a.title.romaji||"Unknown";
+   const title=a.title.english||a.title.romaji;
    const card=document.createElement("div");
    card.className="card";
 
    card.innerHTML=`
     <img loading="lazy"
-    src="${escapeHTML(a.coverImage.large)}"
-    alt="${escapeHTML(title)}">
+    src="${safe(a.coverImage.large)}"
+    alt="${safe(title)}">
     <div class="info">
-     <h3>${escapeHTML(title)}</h3>
+     <h3>${safe(title)}</h3>
      <p>Episodes: ${a.episodes??"Unknown"}</p>
-     <p>${a.seasonYear??"Year unknown"}</p>
-     <span class="tag">${escapeHTML(a.format||"ANIME")}</span>
+     <p>Year: ${a.seasonYear??"Unknown"}</p>
+     <span class="tag">${safe(a.season||"Anime")}</span>
     </div>`;
 
-   card.addEventListener("click",()=>showDetails(a));
+   card.onclick=()=>showDetails(a);
    list.appendChild(card);
   });
 
+  status.textContent=data.media.length?"":"No Anime Found";
   more.style.display=data.pageInfo.hasNextPage?"block":"none";
   page++;
 
- }catch(error){
-  statusBox.textContent="Anime loading failed. Please try again.";
-  more.style.display="block";
+ }catch(e){
+  status.textContent="Loading failed. Check your internet and try again.";
  }finally{
-  loading=false;
+  busy=false;
   more.disabled=false;
  }
 }
 
 function showDetails(a){
- const title=a.title.english||a.title.romaji||"Anime";
+ const title=a.title.english||a.title.romaji;
 
  document.getElementById("details").innerHTML=`
-  <img src="${escapeHTML(a.coverImage.large)}">
-  <h2>${escapeHTML(title)}</h2>
+  <img src="${safe(a.coverImage.large)}">
+  <h2>${safe(title)}</h2>
   <p>Episodes: ${a.episodes??"Unknown"}</p>
-  <p>Season: ${escapeHTML(a.season||"Unknown")}</p>
   <p>Year: ${a.seasonYear??"Unknown"}</p>
-  <p>Rating: ${a.averageScore??"Not rated"}/100</p>
-  <p>Genres: ${escapeHTML((a.genres||[]).join(", "))}</p>
-  <p>${escapeHTML(a.description||"Description unavailable.")}</p>
-  <a class="link" target="_blank"
-  rel="noopener noreferrer"
-  href="${escapeHTML(a.siteUrl)}">Anime Details</a>
+  <p>Season: ${safe(a.season||"Unknown")}</p>
+  <p>Rating: ${a.averageScore??"Unknown"}</p>
+  <p>Genres: ${safe(a.genres.join(", "))}</p>
+  <p>${safe(a.description||"Description unavailable")}</p>
+  <a class="watch" href="${safe(a.siteUrl)}"
+  target="_blank" rel="noopener noreferrer">
+  ANIME INFORMATION
+  </a>
  `;
 
  document.getElementById("modal").style.display="block";
@@ -356,9 +296,7 @@ document.getElementById("close").onclick=()=>{
 };
 
 document.getElementById("modal").onclick=e=>{
- if(e.target.id==="modal"){
-  e.currentTarget.style.display="none";
- }
+ if(e.target.id==="modal")e.currentTarget.style.display="none";
 };
 
 document.querySelectorAll("nav button").forEach(btn=>{
@@ -367,59 +305,37 @@ document.querySelectorAll("nav button").forEach(btn=>{
   .forEach(b=>b.classList.remove("active"));
 
   btn.classList.add("active");
-  currentSort=btn.dataset.sort;
-  currentSearch="";
-  search.value="";
-  heading.textContent=btn.textContent+" Anime";
-  loadAnime(true);
+  sort=btn.dataset.sort;
+  searchText="";
+  document.getElementById("search").value="";
+  document.getElementById("heading").textContent=
+  btn.textContent+" ANIME";
+  load(true);
  };
 });
 
 let timer;
-
-search.addEventListener("input",()=>{
+document.getElementById("search").oninput=e=>{
  clearTimeout(timer);
  timer=setTimeout(()=>{
-  currentSearch=search.value.trim();
-  heading.textContent=currentSearch?
-  "Search Results":"Trending Anime";
-  loadAnime(true);
+  searchText=e.target.value.trim();
+  document.getElementById("heading").textContent=
+  "SEARCH ANIME";
+  load(true);
  },500);
-});
+};
 
-more.onclick=()=>loadAnime();
+more.onclick=()=>load();
 
-loadAnime(true);
+document.getElementById("season").onchange=e=>{
+ document.getElementById("seasonText").textContent=
+ e.target.value==="1"
+ ? "Season 1 Hindi Dub availability depends on your region and subscription."
+ : "Season 2 Hindi Dub availability depends on your region and subscription.";
+};
+
+load(true);
 </script>
 
 </body>
 </html>
-.watch-section{
- margin-top:20px;
- padding:12px;
- background:#10111d;
- border-radius:12px;
-}
-.watch-section select{
- width:100%;
- padding:13px;
- margin:8px 0;
- background:#24253a;
- color:white;
- border:1px solid #555;
- border-radius:9px;
-}
-.episode-btn{
- padding:12px;
- margin:5px;
- background:#25263a;
- color:white;
- border:1px solid #a855f7;
- border-radius:8px;
-}
-.player{
- width:100%;
- aspect-ratio:16/9;
- border:0;
- border-radius:12px;
-}
