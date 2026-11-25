@@ -1,1 +1,175 @@
 src="https://www.youtube.com/embed/jSeXcj5y3Ao"
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANIMEOP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080910;color:white;font-family:Arial,sans-serif}
+header{background:#11121c;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:5}
+.logo{font-size:25px;font-weight:900;color:#a855f7}
+input{background:#20212d;color:white;border:1px solid #38394b;padding:12px;border-radius:10px;width:55%;max-width:350px}
+h2{margin:22px 14px 12px}
+.hero{padding:28px 18px;background:linear-gradient(90deg,#241044,#11121c);margin:12px;border-radius:16px}
+.hero h1{font-size:30px;margin:0 0 8px}
+.hero p{color:#ccc}
+button{background:#9333ea;color:white;border:0;border-radius:9px;padding:10px 15px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:12px}
+.card{background:#151622;border-radius:12px;overflow:hidden;cursor:pointer}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card h3{font-size:13px;padding:0 8px;margin:9px 0}
+.card p{font-size:11px;color:#aaa;padding:0 8px}
+#details{display:none;padding:16px;background:#11121c;margin:12px;border-radius:14px}
+#details img{width:125px;border-radius:10px;float:left;margin:0 14px 10px 0}
+#details:after{content:"";display:block;clear:both}
+#player{width:100%;aspect-ratio:16/9;background:#000;border:0;border-radius:10px;margin-top:12px}
+#playerArea{display:none;padding:12px}
+.muted{color:#aaa;font-size:13px}
+footer{text-align:center;padding:25px;color:#777}
+@media(min-width:700px){.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:360px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="logo">ANIMEOP</div>
+ <input id="search" placeholder="Search anime..." oninput="searchAnime()">
+</header>
+
+<section class="hero">
+ <h1>Explore Anime World</h1>
+ <p>Discover popular, trending and classic anime.</p>
+ <button onclick="loadAnime('TRENDING')">Explore Anime</button>
+</section>
+
+<h2 id="heading">🔥 Trending Anime</h2>
+<div class="grid" id="animeList"></div>
+
+<section id="details">
+ <button onclick="closeDetails()">← Back</button>
+ <div style="margin-top:18px">
+  <img id="detailImage">
+  <h2 id="detailTitle"></h2>
+  <p id="detailInfo" class="muted"></p>
+  <p id="detailDescription"></p>
+ </div>
+ <h3>Episodes</h3>
+ <p class="muted">Add an authorized video embed for an episode below.</p>
+ <input id="videoId" placeholder="YouTube video ID">
+ <button onclick="playVideo()">Play Video</button>
+</section>
+
+<section id="playerArea">
+ <h2>Anime Player</h2>
+ <iframe id="player" allowfullscreen
+ allow="accelerometer; autoplay; encrypted-media; picture-in-picture"></iframe>
+ <p class="muted">Only use videos you own or are authorized to embed.</p>
+</section>
+
+<footer>ANIMEOP © 2026</footer>
+
+<script>
+const API="https://graphql.anilist.co";
+let animeData=[];
+
+async function loadAnime(type="TRENDING"){
+ document.getElementById("heading").textContent=
+ type==="TRENDING"?"🔥 Trending Anime":"⭐ Popular Anime";
+
+ const query=`
+ query {
+ Page(perPage:24) {
+ media(type:ANIME, sort:${type}, isAdult:false) {
+ id
+ title { romaji english }
+ coverImage { large }
+ episodes
+ seasonYear
+ averageScore
+ description(asHtml:false)
+ genres
+ }
+ }
+ }`;
+
+ try{
+  const response=await fetch(API,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({query})
+  });
+  const result=await response.json();
+  animeData=result.data.Page.media;
+  showAnime(animeData);
+ }catch(error){
+  document.getElementById("animeList").innerHTML=
+  "<p>Anime load nahi hua. Internet check karke refresh karo.</p>";
+ }
+}
+
+function showAnime(list){
+ const box=document.getElementById("animeList");
+ box.innerHTML="";
+ list.forEach(anime=>{
+  const card=document.createElement("div");
+  card.className="card";
+  const img=document.createElement("img");
+  img.src=anime.coverImage.large;
+  img.alt=anime.title.english||anime.title.romaji;
+  const title=document.createElement("h3");
+  title.textContent=anime.title.english||anime.title.romaji;
+  const info=document.createElement("p");
+  info.textContent=(anime.seasonYear||"Anime")+" • "+(anime.episodes||"?")+" Episodes";
+  card.append(img,title,info);
+  card.onclick=()=>openDetails(anime.id);
+  box.appendChild(card);
+ });
+}
+
+function searchAnime(){
+ const value=document.getElementById("search").value.toLowerCase();
+ showAnime(animeData.filter(a=>
+ (a.title.english||"").toLowerCase().includes(value)||
+ (a.title.romaji||"").toLowerCase().includes(value)
+ ));
+}
+
+function openDetails(id){
+ const a=animeData.find(x=>x.id===id);
+ if(!a)return;
+ document.getElementById("details").style.display="block";
+ document.getElementById("detailImage").src=a.coverImage.large;
+ document.getElementById("detailTitle").textContent=a.title.english||a.title.romaji;
+ document.getElementById("detailInfo").textContent=
+ "Year: "+(a.seasonYear||"Unknown")+" | Episodes: "+(a.episodes||"Unknown")+" | Score: "+(a.averageScore||"N/A");
+ document.getElementById("detailDescription").textContent=
+ (a.description||"Description not available").replace(/<[^>]*>/g,"");
+ document.getElementById("playerArea").style.display="none";
+ document.getElementById("details").scrollIntoView({behavior:"smooth"});
+}
+
+function closeDetails(){
+ document.getElementById("details").style.display="none";
+ document.getElementById("playerArea").style.display="none";
+}
+
+function playVideo(){
+ const id=document.getElementById("videoId").value.trim();
+ if(!/^[a-zA-Z0-9_-]{11}$/.test(id)){
+  alert("Valid YouTube video ID dalo.");
+  return;
+ }
+ document.getElementById("player").src=
+ "https://www.youtube-nocookie.com/embed/"+id;
+ document.getElementById("playerArea").style.display="block";
+ document.getElementById("playerArea").scrollIntoView({behavior:"smooth"});
+}
+
+loadAnime("TRENDING");
+</script>
+</body>
+</html>
